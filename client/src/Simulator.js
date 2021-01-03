@@ -14,10 +14,10 @@ class Simulator extends React.Component {
 			maxTicks: 100,
 			running: false,
 			tickIntervalId: null,
-			tickMs: 750,
+			tickMs: 150,
       producers: [ { 
           producerId: 0,
-          backlog: 1000,
+          backlog: 100,
           createRate: 1,
           produceRate: 3
         } 
@@ -33,8 +33,8 @@ class Simulator extends React.Component {
       ],
       consumers: [ {
           consumerId: 0,
-          currentOffset: 0,
-          consumeRate: 2
+          consumeRate: 2,
+					srcPartitions: [ {partitionId: 0, currentOffset: 0 } ]  //TODO: algorithmically assign this
         }
       ],
 		};
@@ -44,12 +44,13 @@ class Simulator extends React.Component {
 		// should we roll this into the setState statement?
 		var tickIntervalId = setInterval(
 			() => this.tick(),   // It is unclear to me why I needed the () => here... but it only works that way!
-			this.state.tickMs);  
+			this.state.tickMs
+		);  
 		this.setState({
 			...this.state,
 			tickIntervalId: tickIntervalId,
 			running: true
-		})
+		});
 	}
 
 	componentWillUnmount() {
@@ -60,8 +61,27 @@ class Simulator extends React.Component {
 		if (a.maxReceiveRate > (a.receivedThisTick + n)) {
 			return true
 		} else {
-			console.log("Partition {a} blocked!")
+			console.log("Partition {a} receive blocked!")
 			return false
+		}
+	}
+
+	partitionAvailTransmit(a, n) {
+		if (n <= 0) {
+			console.log("Partition {a} asked for 0 or negative transmit!")
+			return 0 //Whatever, you ask for negative, we give you zero.
+		}
+
+		if (a.maxTransmitRate === a.transmittedThisTick) {
+			console.log("Partition {a} transmit blocked!")
+			return 0
+		}
+
+		if (a.maxTransmitRate > (a.transmittedThisTick + n)) {
+			return n
+		} else {
+			console.log("Partition {a} transmit over-demand!")
+			return (a.maxTransmitRate - a.transmittedThisTick) // Give up the rest
 		}
 	}
 
@@ -79,11 +99,11 @@ class Simulator extends React.Component {
 
 		// Step 1: Create and Produce!
 		for (let p of newProducers) {
-			var destPartitionId = 0  // IMPORTANT: each producer will have it's own choices about destination
+			let destPartitionId = 0  // IMPORTANT: each producer will have it's own choices about destination
 			// 1a: create new records for the local backlog
 			p.backlog = p.backlog + p.createRate
 
-			var n = p.produceRate
+			let n = Math.min(p.produceRate, p.backlog)
 			// 1b: attempt to produce the whole produceRate (no partial produces here)
 			if (this.partitionCanReceive(newPartitions[destPartitionId], n)) {
 				newPartitions[destPartitionId].maxOffset = newPartitions[destPartitionId].maxOffset + n
@@ -93,24 +113,54 @@ class Simulator extends React.Component {
 		}
 
 		// Step 2: Consume!
-		//TODO:
+		for (let c of newConsumers) {
+			//Working here
+			let consumeCap = c.consumeRate
+			for (let a of c.srcPartitions) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
+				let avail = (newPartitions[a.partitionId].maxOffset - a.currentOffset)
+				if (avail < 0) { 
+					// Shouldn't be here!
+					console.log("ERROR: Consumer {c} on {p} is in an impossible place?")
+				} else {
+					if (consumeCap <= 0) {
+						console.log("Consumer {c} does not have *any* capacity to service {avail} waiting records on {a}")
+					} else {
+						let n = this.partitionAvailTransmit(newPartitions[a.partitionId], consumeCap)  // Attempt to get the maxiumum available transfer
+						a.currentOffset = a.currentOffset + n
+						newPartitions[a.partitionId].transmitThisTick = newPartitions[a.partitionId] - n
+						consumeCap = consumeCap - n
+					}
+				}
+			}
+		}
+
+		var newRunning = this.state.running
+		if (this.state.tickNumber > this.state.maxTicks) {
+			clearInterval(this.state.tickIntervalId)
+			newRunning = false
+		}
 
 		this.setState({
 			...this.state,
+			running: newRunning,
 			tickNumber: this.state.tickNumber + 1,
 			producers: newProducers,
 			partitions: newPartitions,
 			consumers: newConsumers
-		})
+		});
+		
   }
 
 	render() {
 		return(
 			<div className="kSim">
-				<div className="ticker"> {this.state.tickNumber}/{this.state.maxTicks} run:{this.state.running} </div>
+				<div className="ticker"> 
+				  {this.state.running ? 'run' : 'STOP'} 
+					({this.state.tickNumber}/{this.state.maxTicks}) 
+				</div>
         <Producer backlog={this.state.producers[0].backlog} />
         <Partition maxOffset={this.state.partitions[0].maxOffset} />
-        <Consumer currentOffset={this.state.consumers[0].currentOffset} />
+        <Consumer currentOffset={this.state.consumers[0].srcPartitions[0].currentOffset} />
       </div>
 		);
 	}
