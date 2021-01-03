@@ -1,4 +1,7 @@
 import React from 'react';
+
+import { cloneDeep } from "lodash" // Because I am a horrible monster who can't be bothered to write my own
+
 import Producer from './Producer.js';
 import Partition from './Partition.js';
 import Consumer from './Consumer.js';
@@ -22,7 +25,9 @@ class Simulator extends React.Component {
       partitions: [ {
           partitionId: 0,
           maxOffset: 0,
+					receivedThisTick: 0,
           maxReceiveRate: 100,  // Limitless
+					transmittedThisTick: 0,
           maxTransmitRate: 100  // Well, pretty much limitless
         }
       ],
@@ -51,10 +56,51 @@ class Simulator extends React.Component {
 		clearInterval(this.state.tickIntervalId) // Clean up our mess
 	}
 
+	partitionCanReceive(a, n) {
+		if (a.maxReceiveRate > (a.receivedThisTick + n)) {
+			return true
+		} else {
+			console.log("Partition {a} blocked!")
+			return false
+		}
+	}
+
   tick() {
+		// It's wasteful, but we can optimize for speed by using a real language later.
+		var newProducers = cloneDeep(this.state.producers)
+		var newPartitions = cloneDeep(this.state.partitions)
+		var newConsumers = cloneDeep(this.state.consumers)
+
+		// Initialize the rate data
+		for (let a of newPartitions) {
+			a.receivedThisTick = 0
+			a.transmittedThisTick = 0
+		}
+
+		// Step 1: Create and Produce!
+		for (let p of newProducers) {
+			var destPartitionId = 0  // IMPORTANT: each producer will have it's own choices about destination
+			// 1a: create new records for the local backlog
+			p.backlog = p.backlog + p.createRate
+
+			var n = p.produceRate
+			// 1b: attempt to produce the whole produceRate (no partial produces here)
+			if (this.partitionCanReceive(newPartitions[destPartitionId], n)) {
+				newPartitions[destPartitionId].maxOffset = newPartitions[destPartitionId].maxOffset + n
+				newPartitions[destPartitionId].receivedThisTick = newPartitions[destPartitionId].receivedThisTick + n
+				p.backlog = p.backlog - n
+			}
+		}
+
+		// Step 2: Consume!
+		//TODO:
+
 		this.setState({
 			...this.state,
-			tickNumber: this.state.tickNumber + 1
+			tickNumber: this.state.tickNumber + 1,
+			producers: newProducers,
+			partitions: newPartitions,
+			consumers: newConsumers
 		})
   }
 
