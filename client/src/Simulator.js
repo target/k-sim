@@ -114,7 +114,6 @@ class Simulator extends React.Component {
 
 		// Step 2: Consume!
 		for (let c of newConsumers) {
-			//Working here
 			let consumeCap = c.consumeRate
 			for (let a of c.srcPartitions) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
 				let avail = (newPartitions[a.partitionId].maxOffset - a.currentOffset)
@@ -125,7 +124,8 @@ class Simulator extends React.Component {
 					if (consumeCap <= 0) {
 						console.log("Consumer {c} does not have *any* capacity to service {avail} waiting records on {a}")
 					} else {
-						let n = this.partitionAvailTransmit(newPartitions[a.partitionId], consumeCap)  // Attempt to get the maxiumum available transfer
+						//// Attempt to get the maxiumum available transfer or all the available records
+						let n = Math.min( avail, this.partitionAvailTransmit(newPartitions[a.partitionId], consumeCap) )
 						a.currentOffset = a.currentOffset + n
 						newPartitions[a.partitionId].transmitThisTick = newPartitions[a.partitionId] - n
 						consumeCap = consumeCap - n
