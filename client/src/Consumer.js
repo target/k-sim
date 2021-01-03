@@ -1,17 +1,14 @@
 import React from 'react';
 
 class Consumer extends React.Component {
-	constructor() {
+	constructor(props) {
 		super();
-		this.state = {
-			client_offset: 0, 
-			consume_rate: 0,
-		};
+		this.state = { };
 	}
 
 	render() {
 		return(
-			<div>Consumer (client_offset: {this.state.client_offset}) </div>
+			<div>Consumer (currentOffset: {this.props.currentOffset}) </div>
 		);
 	}
 }

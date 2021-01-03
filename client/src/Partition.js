@@ -1,19 +1,15 @@
 import React from 'react';
 
 class Partition extends React.Component {
-	constructor() {
+	constructor(props) {
 		super();
-		this.state = {
-			max_offset: 0,
-			client_offset: 0,
-			incoming_rate: 0,
-			outgoing_rate: 0
-		};
+		this.state = { };
 	}
 
 	render() {
 		return(
-			<div>Partition (max_offset: {this.state.max_offset}, client_offset: {this.state.client_offset}) </div>
+			<div>Partition (maxOffset: {this.props.maxOffset})
+      </div>
 		);
 	}
 }
