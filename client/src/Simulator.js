@@ -7,36 +7,49 @@ import Partition from './Partition.js';
 import Consumer from './Consumer.js';
 
 class Simulator extends React.Component {
-	constructor() {
+	constructor(props) {
 		super();
+		const initialProducers = []
+		for (let pId = 0; pId < props.numProducers ; pId++  ) {
+			initialProducers.push({
+				producerId: pId,
+				backlog: 100,
+				createRate: 7,
+				produceRate: 12
+			})
+		}
+
+		const initialPartitions = []
+		for (let aId = 0; aId < props.numPartitions ; aId++  ) {
+			initialPartitions.push({
+				partitionId: aId,
+				maxOffset: 0,
+				receivedThisTick: 0,
+				maxReceiveRate: 1000,  // Limitless
+				transmittedThisTick: 0,
+				maxTransmitRate: 1000  // Well, pretty much limitless
+			})
+		}
+
+		const initialConsumers = []
+		for (let cId = 0; cId < props.numConsumers ; cId++  ) {
+			initialConsumers.push({
+				consumerId: cId,
+				consumeRate: 34,
+				srcPartitions: [ {partitionId: cId, currentOffset: 0 } ]  //TODO: algorithmically assign this
+			})
+		}
+
+
 		this.state = {
       tickNumber: 0,
-			maxTicks: 100,
+			maxTicks: 1000,
 			running: false,
 			tickIntervalId: null,
 			tickMs: 150,
-      producers: [ { 
-          producerId: 0,
-          backlog: 100,
-          createRate: 1,
-          produceRate: 3
-        } 
-      ],
-      partitions: [ {
-          partitionId: 0,
-          maxOffset: 0,
-					receivedThisTick: 0,
-          maxReceiveRate: 100,  // Limitless
-					transmittedThisTick: 0,
-          maxTransmitRate: 100  // Well, pretty much limitless
-        }
-      ],
-      consumers: [ {
-          consumerId: 0,
-          consumeRate: 2,
-					srcPartitions: [ {partitionId: 0, currentOffset: 0 } ]  //TODO: algorithmically assign this
-        }
-      ],
+      producers: initialProducers,
+      partitions: initialPartitions,
+      consumers: initialConsumers
 		};
   }
 
@@ -151,17 +164,34 @@ class Simulator extends React.Component {
 		
   }
 
+
 	render() {
+		const pComps = []
+		for (const p of this.state.producers.values()) {
+			pComps.push(<Producer backlog={p.backlog} />)
+		}
+
+		const aComps = []
+		for (const a of this.state.partitions.values()) {
+			aComps.push(<Partition maxOffset={a.maxOffset} />)
+		}
+
+		const cComps = []
+		for (const c of this.state.consumers.values()) {
+			//FIXME: Consumer needs rework to support multiple partitions per consumer
+			cComps.push(<Consumer currentOffset={c.srcPartitions[0].currentOffset} />)
+		}
+
 		return(
 			<div className="kSim">
 				<div className="ticker"> 
 				  {this.state.running ? 'run' : 'STOP'} 
 					({this.state.tickNumber}/{this.state.maxTicks}) 
 				</div>
-        <Producer backlog={this.state.producers[0].backlog} />
-        <Partition maxOffset={this.state.partitions[0].maxOffset} />
-        <Consumer currentOffset={this.state.consumers[0].srcPartitions[0].currentOffset} />
-      </div>
+				{pComps}
+				{aComps}
+				{cComps}
+			</div>
 		);
 	}
 }

@@ -19,7 +19,7 @@ class App extends Component {
       <div className="App">
 		    <h1>k-sim: Kafka Failover/Throughput Simulator</h1>
 				<p>A simple simulator designed to explore bottlenecking and throughput scenarios.  Written with Kafka fundametnals in mind, there's no reason why this shouldn't apply to other queuing technologies.</p>
-			  <Simulator />
+			  <Simulator {...{numProducers: 2, numPartitions: 1, numConsumers: 1}} />
 			</div>
     );
   }
