@@ -8,8 +8,7 @@ class Partition extends React.Component {
 
 	render() {
 		return(
-			<div>Partition (maxOffset: {this.props.maxOffset})
-      </div>
+			<div>Partition (maxOffset: {this.props.maxOffset})</div>
 		);
 	}
 }

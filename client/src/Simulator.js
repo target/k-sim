@@ -14,8 +14,10 @@ class Simulator extends React.Component {
 			initialProducers.push({
 				producerId: pId,
 				backlog: 100,
-				createRate: 7,
-				produceRate: 12
+				createRate: 0,
+				produceRate: 2,
+				lastDestPartition: 0,
+				produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
 			})
 		}
 
@@ -25,33 +27,69 @@ class Simulator extends React.Component {
 				partitionId: aId,
 				maxOffset: 0,
 				receivedThisTick: 0,
-				maxReceiveRate: 1000,  // Limitless
+				maxReceiveRate: 10,  
 				transmittedThisTick: 0,
-				maxTransmitRate: 1000  // Well, pretty much limitless
+				maxTransmitRate: 10  
 			})
 		}
 
 		const initialConsumers = []
+		const partitionBalance = this.getPartitionBalance('round-robin', props.numPartitions, props.numConsumers)
+
 		for (let cId = 0; cId < props.numConsumers ; cId++  ) {
+			let srcPartitions = []
+			for (let aId of partitionBalance[cId].values()) {
+				srcPartitions.push({partitionId: aId, currentOffset: 0 })
+			}
 			initialConsumers.push({
 				consumerId: cId,
-				consumeRate: 34,
-				srcPartitions: [ {partitionId: cId, currentOffset: 0 } ]  //TODO: algorithmically assign this
+				consumeRate: 4,
+				srcPartitions: srcPartitions
 			})
 		}
 
-
-		this.state = {
-      tickNumber: 0,
-			maxTicks: 1000,
+		let finalState = {
+			tickNumber: 0,
+			maxTicks: 100,
 			running: false,
 			tickIntervalId: null,
 			tickMs: 150,
-      producers: initialProducers,
-      partitions: initialPartitions,
-      consumers: initialConsumers
-		};
-  }
+			producers: initialProducers,
+			partitions: initialPartitions,
+			consumers: initialConsumers
+		}
+
+		console.log("Initialized simulator with this state:")
+		console.log(finalState)
+		this.state = finalState;
+	}
+
+	getPartitionBalance(strategy, numPartitions, numConsumers) {
+		strategy = 'round-robin' // only current supported strategy
+
+		//console.log("gPB input: ", strategy, numPartitions, numConsumers)
+		let partitionBalance = []
+
+		if (strategy === 'round-robin') {
+			//console.log("attempt to apply round-robin")
+			for (let cId = 0; cId < numConsumers; cId++ ) {
+				//console.log("apply for consumer: " + cId)
+				let aId = cId
+				let myPartitions = []
+				while (aId < numPartitions) {
+					myPartitions.push(aId)
+					aId = aId + numConsumers
+				}
+				//console.log(myPartitions)
+				partitionBalance.push(myPartitions)
+			}
+
+		} else {
+			console.log("ERROR: Unknown partition balance strategy: " + strategy)
+		}
+		//console.log("pB result: ", partitionBalance)
+		return(partitionBalance)
+	}
 
 	componentDidMount() {
 		// should we roll this into the setState statement?
@@ -70,30 +108,40 @@ class Simulator extends React.Component {
 		clearInterval(this.state.tickIntervalId) // Clean up our mess
 	}
 
-	partitionCanReceive(a, n) {
-		if (a.maxReceiveRate > (a.receivedThisTick + n)) {
-			return true
-		} else {
-			console.log("Partition {a} receive blocked!")
-			return false
-		}
-	}
-
-	partitionAvailTransmit(a, n) {
+	partitionAvailReceive(a, n) {
 		if (n <= 0) {
-			console.log("Partition {a} asked for 0 or negative transmit!")
+			// console.log("Partition " + a.partitionId + "ignoring ask for " + n + " receive!")
 			return 0 //Whatever, you ask for negative, we give you zero.
 		}
 
-		if (a.maxTransmitRate === a.transmittedThisTick) {
-			console.log("Partition {a} transmit blocked!")
+		if (a.maxReceiveRate === a.receivedThisTick) {
+			// console.log("Partition " + a.partitionId + " receive blocked!")
 			return 0
 		}
 
 		if (a.maxTransmitRate > (a.transmittedThisTick + n)) {
 			return n
 		} else {
-			console.log("Partition {a} transmit over-demand!")
+			// console.log("Partition " + a.partitionId + " receive over-demand!")
+			return (a.maxReceiveRate - a.ReceivedThisTick) // Give up the rest
+		}
+	}
+
+	partitionAvailTransmit(a, n) {
+		if (n <= 0) {
+			//console.log("Partition " + a.partitionId + "ignoring ask for " + n + " transmit!")
+			return 0 //Whatever, you ask for negative, we give you zero.
+		}
+
+		if (a.maxTransmitRate === a.transmittedThisTick) {
+			//console.log("Partition " + a.partitionId + " transmit blocked!")
+			return 0
+		}
+
+		if (a.maxTransmitRate > (a.transmittedThisTick + n)) {
+			return n
+		} else {
+			//console.log("Partition " + a.partitionId + " transmit over-demand!")
 			return (a.maxTransmitRate - a.transmittedThisTick) // Give up the rest
 		}
 	}
@@ -112,16 +160,38 @@ class Simulator extends React.Component {
 
 		// Step 1: Create and Produce!
 		for (let p of newProducers) {
-			let destPartitionId = 0  // IMPORTANT: each producer will have it's own choices about destination
+			let destPartitionId = p.lastDestPartition  // IMPORTANT: each producer will have it's own choices about destination
 			// 1a: create new records for the local backlog
 			p.backlog = p.backlog + p.createRate
 
-			let n = Math.min(p.produceRate, p.backlog)
-			// 1b: attempt to produce the whole produceRate (no partial produces here)
-			if (this.partitionCanReceive(newPartitions[destPartitionId], n)) {
+			// 1b: calculate demand and resuling n
+			let demand = Math.min(p.produceRate, p.backlog)
+			let n = this.partitionAvailReceive(newPartitions[destPartitionId], demand)
+
+			// 1c: apply produce
+			if (n > 0) {
 				newPartitions[destPartitionId].maxOffset = newPartitions[destPartitionId].maxOffset + n
 				newPartitions[destPartitionId].receivedThisTick = newPartitions[destPartitionId].receivedThisTick + n
 				p.backlog = p.backlog - n
+			}
+
+			// 1d: rollforward overflow
+			if (demand > n) { 
+				console.log("retry for ", p)
+				let numRetries = newPartitions.length / 3
+				let r = 1
+				while ( (r < numRetries) && (demand > 0) ) {
+					destPartitionId++
+					if(destPartitionId >= newPartitions.length) { destPartitionId = 0 }
+					demand = demand - n
+					n = this.partitionAvailReceive(newPartitions[destPartitionId], demand)
+					if (n > 0) {
+						newPartitions[destPartitionId].maxOffset = newPartitions[destPartitionId].maxOffset + n
+						newPartitions[destPartitionId].receivedThisTick = newPartitions[destPartitionId].receivedThisTick + n
+						p.backlog = p.backlog - n
+					}
+				}
+				p.lastDestPartition = destPartitionId
 			}
 		}
 
@@ -138,7 +208,7 @@ class Simulator extends React.Component {
 						console.log("Consumer {c} does not have *any* capacity to service {avail} waiting records on {a}")
 					} else {
 						//// Attempt to get the maxiumum available transfer or all the available records
-						let n = Math.min( avail, this.partitionAvailTransmit(newPartitions[a.partitionId], consumeCap) )
+						let n = Math.min( consumeCap, this.partitionAvailTransmit(newPartitions[a.partitionId], avail) )
 						a.currentOffset = a.currentOffset + n
 						newPartitions[a.partitionId].transmitThisTick = newPartitions[a.partitionId] - n
 						consumeCap = consumeCap - n
@@ -168,18 +238,18 @@ class Simulator extends React.Component {
 	render() {
 		const pComps = []
 		for (const p of this.state.producers.values()) {
-			pComps.push(<Producer backlog={p.backlog} />)
+			pComps.push(<Producer backlog={p.backlog} key={"Producer-"+p.producerId}/>)
 		}
 
 		const aComps = []
 		for (const a of this.state.partitions.values()) {
-			aComps.push(<Partition maxOffset={a.maxOffset} />)
+			aComps.push(<Partition maxOffset={a.maxOffset} key={"Partition-"+a.partitionId}  />)
 		}
 
 		const cComps = []
 		for (const c of this.state.consumers.values()) {
 			//FIXME: Consumer needs rework to support multiple partitions per consumer
-			cComps.push(<Consumer currentOffset={c.srcPartitions[0].currentOffset} />)
+			cComps.push(<Consumer partitions={this.state.partitions} c={c} key={"Consumer-"+c.consumerId}/>)
 		}
 
 		return(
@@ -188,8 +258,11 @@ class Simulator extends React.Component {
 				  {this.state.running ? 'run' : 'STOP'} 
 					({this.state.tickNumber}/{this.state.maxTicks}) 
 				</div>
+				<h2>Producers</h2>
 				{pComps}
+				<h2>Partitions</h2>
 				{aComps}
+				<h2>Consumers</h2>
 				{cComps}
 			</div>
 		);
