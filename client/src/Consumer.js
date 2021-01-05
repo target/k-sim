@@ -24,17 +24,19 @@ class Consumer extends React.Component {
 	render() {
 		const aComps = []
 		let totalLag = 0
+		let totalOffsets = 0
 		for (let myPartition of this.props.c.srcPartitions) {
 			let a = this.props.partitions[myPartition.partitionId]
 			let lag = a.maxOffset - myPartition.currentOffset
 			totalLag += lag
+			totalOffsets += myPartition.currentOffset
 			aComps.push(<ConsumerPartition 
 				partitionId={myPartition.partitionId} 
 				currentOffset={myPartition.currentOffset}
 				lag={lag} />) }
 		return(
 			<div className="consumer">
-				Consumer (totalLag: {totalLag}) 
+				Consumer (lag: {totalLag},  consumed: {totalOffsets}) 
 				{aComps}
 			</div>
 		);

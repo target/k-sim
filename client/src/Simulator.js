@@ -13,9 +13,9 @@ class Simulator extends React.Component {
 		for (let pId = 0; pId < props.numProducers ; pId++  ) {
 			initialProducers.push({
 				producerId: pId,
-				backlog: 100,
-				createRate: 0,
-				produceRate: 2,
+				backlog: 0,
+				createRate: 3,
+				produceRate: 3,
 				lastDestPartition: 0,
 				produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
 			})
@@ -43,8 +43,9 @@ class Simulator extends React.Component {
 			}
 			initialConsumers.push({
 				consumerId: cId,
-				consumeRate: 4,
-				srcPartitions: srcPartitions
+				consumeRate: 5,
+				srcPartitions: srcPartitions,
+				totalOffsets: 0
 			})
 		}
 
@@ -119,11 +120,11 @@ class Simulator extends React.Component {
 			return 0
 		}
 
-		if (a.maxTransmitRate > (a.transmittedThisTick + n)) {
+		if (a.maxTransmitRate > (a.receivedThisTick + n)) {
 			return n
 		} else {
 			// console.log("Partition " + a.partitionId + " receive over-demand!")
-			return (a.maxReceiveRate - a.ReceivedThisTick) // Give up the rest
+			return (a.maxReceiveRate - a.receivedThisTick) // Give up the rest
 		}
 	}
 
@@ -146,7 +147,7 @@ class Simulator extends React.Component {
 		}
 	}
 
-  tick() {
+	tick() {
 		// It's wasteful, but we can optimize for speed by using a real language later.
 		var newProducers = cloneDeep(this.state.producers)
 		var newPartitions = cloneDeep(this.state.partitions)
@@ -161,6 +162,8 @@ class Simulator extends React.Component {
 		// Step 1: Create and Produce!
 		for (let p of newProducers) {
 			let destPartitionId = p.lastDestPartition  // IMPORTANT: each producer will have it's own choices about destination
+			destPartitionId++
+			if(destPartitionId >= newPartitions.length) { destPartitionId = 0 }
 			// 1a: create new records for the local backlog
 			p.backlog = p.backlog + p.createRate
 
@@ -176,8 +179,8 @@ class Simulator extends React.Component {
 			}
 
 			// 1d: rollforward overflow
-			if (demand > n) { 
-				console.log("retry for ", p)
+			if (demand > n) {
+				//console.log("retry for ", p)
 				let numRetries = newPartitions.length / 3
 				let r = 1
 				while ( (r < numRetries) && (demand > 0) ) {
@@ -191,30 +194,34 @@ class Simulator extends React.Component {
 						p.backlog = p.backlog - n
 					}
 				}
-				p.lastDestPartition = destPartitionId
 			}
+			p.lastDestPartition = destPartitionId
 		}
 
 		// Step 2: Consume!
 		for (let c of newConsumers) {
 			let consumeCap = c.consumeRate
+			let totalOffsets = 0
 			for (let a of c.srcPartitions) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
 				let avail = (newPartitions[a.partitionId].maxOffset - a.currentOffset)
 				if (avail < 0) { 
 					// Shouldn't be here!
-					console.log("ERROR: Consumer {c} on {p} is in an impossible place?")
+					//console.log("ERROR: Consumer {c} on {p} is in an impossible place?")
 				} else {
 					if (consumeCap <= 0) {
-						console.log("Consumer {c} does not have *any* capacity to service {avail} waiting records on {a}")
+						//console.log("Consumer {c} does not have *any* capacity to service {avail} waiting records on {a}")
 					} else {
 						//// Attempt to get the maxiumum available transfer or all the available records
 						let n = Math.min( consumeCap, this.partitionAvailTransmit(newPartitions[a.partitionId], avail) )
 						a.currentOffset = a.currentOffset + n
 						newPartitions[a.partitionId].transmitThisTick = newPartitions[a.partitionId] - n
 						consumeCap = consumeCap - n
+
 					}
 				}
+				totalOffsets = totalOffsets + a.currentOffset // BUG: Not exactly true, but whatever, we don't rebalance
 			}
+			c.totalOffsets = totalOffsets
 		}
 
 		var newRunning = this.state.running
@@ -232,23 +239,28 @@ class Simulator extends React.Component {
 			consumers: newConsumers
 		});
 		
-  }
+	}
 
 
 	render() {
 		const pComps = []
+		let totalBacklog = 0
 		for (const p of this.state.producers.values()) {
+			totalBacklog = totalBacklog + p.backlog
 			pComps.push(<Producer backlog={p.backlog} key={"Producer-"+p.producerId}/>)
 		}
 
 		const aComps = []
+		let totalOffsets = 0
 		for (const a of this.state.partitions.values()) {
+			totalOffsets = totalOffsets + a.maxOffset
 			aComps.push(<Partition maxOffset={a.maxOffset} key={"Partition-"+a.partitionId}  />)
 		}
 
 		const cComps = []
+		let totalConsumed = 0
 		for (const c of this.state.consumers.values()) {
-			//FIXME: Consumer needs rework to support multiple partitions per consumer
+			totalConsumed = totalConsumed + c.totalOffsets
 			cComps.push(<Consumer partitions={this.state.partitions} c={c} key={"Consumer-"+c.consumerId}/>)
 		}
 
@@ -259,10 +271,13 @@ class Simulator extends React.Component {
 					({this.state.tickNumber}/{this.state.maxTicks}) 
 				</div>
 				<h2>Producers</h2>
+				<h3>Total Backlog: {totalBacklog}</h3>
 				{pComps}
 				<h2>Partitions</h2>
+				<h3>Total Offsets: {totalOffsets}</h3>
 				{aComps}
 				<h2>Consumers</h2>
+				<h3>Total Consumed: {totalConsumed}</h3>
 				{cComps}
 			</div>
 		);

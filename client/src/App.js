@@ -16,11 +16,11 @@ class App extends Component {
 
   render () {
   	return (
-      <div className="App">
+		<div className="App">
 		    <h1>k-sim: Kafka Failover/Throughput Simulator</h1>
-				<p>A simple simulator designed to explore bottlenecking and throughput scenarios.  Written with Kafka fundametnals in mind, there's no reason why this shouldn't apply to other queuing technologies.</p>
-			  <Simulator {...{numProducers: 20, numPartitions: 7, numConsumers: 3}} />
-			</div>
+			<p>A simple simulator designed to explore bottlenecking and throughput scenarios.  Written with Kafka fundametnals in mind, there's no reason why this shouldn't apply to other queuing technologies.</p>
+			<Simulator {...{numProducers: 5, numPartitions: 5, numConsumers: 4}} />
+		</div>
     );
   }
 }
