@@ -10,6 +10,9 @@ class SimulatorSettings extends React.Component {
 
 	render() {
 		//console.log("settings", this.props.settings)
+		const layoutPropList = Object.keys(this.props.settings.layout).map((k) =>
+			<li><strong>{k}</strong>: {this.props.settings.layout[k]}</li>
+		)
 		const producerPropList = Object.keys(this.props.settings.producer).map((k) =>
 			<li><strong>{k}</strong>: {this.props.settings.producer[k]}</li>
 		)
@@ -22,6 +25,8 @@ class SimulatorSettings extends React.Component {
 		return(
 			<div className="simulator-settings">
 				<h1>Custom Settings</h1>
+				<h2>Layout</h2>
+				<ul>{layoutPropList}</ul>
 				<h2>Producer</h2>
 				<ul>{producerPropList}</ul>
 				<h2>Partition</h2>

@@ -10,63 +10,13 @@ import SimulatorSettings from './SimulatorSettings.js';
 class Simulator extends React.Component {
 	constructor(props) {
 		super();
-		const initialProducers = []
-		for (let pId = 0; pId < props.numProducers ; pId++  ) {
-			const newProducer = {
-				producerId: pId,
-				backlog: 0,
-				createRate: 1,
-				produceRate: 1,
-				lastDestPartition: 0,
-				produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
-			}
-			initialProducers.push({...newProducer, ...props.settings.producer})
+		this.state = {
+			settings: props.settings,
+			producers: [],
+			partitions: [],
+			consumers: []
 		}
-
-		const initialPartitions = []
-		for (let aId = 0; aId < props.numPartitions ; aId++  ) {
-			const newPartition = {
-				partitionId: aId,
-				maxOffset: 0,
-				receivedThisTick: 0,
-				maxReceiveRate: 1,  
-				transmittedThisTick: 0,
-				maxTransmitRate: 1  
-			}
-			initialPartitions.push({ ...newPartition, ...props.settings.partition })
-		}
-
-		const initialConsumers = []
-		const partitionBalance = this.getPartitionBalance('round-robin', props.numPartitions, props.numConsumers)
-
-		for (let cId = 0; cId < props.numConsumers ; cId++  ) {
-			let srcPartitions = []
-			for (let aId of partitionBalance[cId].values()) {
-				srcPartitions.push({partitionId: aId, currentOffset: 0 })
-			}
-			const newConsumer = {
-				consumerId: cId,
-				consumeRate: 1,
-				srcPartitions: srcPartitions,
-				totalOffsets: 0
-			}
-			initialConsumers.push({...newConsumer, ...props.settings.consumer})
-		}
-
-		const finalState = {
-			tickNumber: 1,
-			maxTicks: 100,
-			running: false,
-			tickIntervalId: null,
-			tickMs: 150,
-			producers: initialProducers,
-			partitions: initialPartitions,
-			consumers: initialConsumers
-		}
-
-		console.log("Initialized simulator with this state:")
-		console.log(finalState)
-		this.state = finalState;
+		this.initializeSimulator()
 	}
 
 	getPartitionBalance(strategy, numPartitions, numConsumers) {
@@ -97,11 +47,11 @@ class Simulator extends React.Component {
 	}
 
 	componentDidMount() {
-		this.startTickInterval()
+		//this.startTickInterval()
 	}
 
 	componentWillUnmount() {
-		clearInterval(this.state.tickIntervalId) // Clean up our mess
+		this.clearTickInterval() // Clean up our mess
 	}
 
 	partitionAvailReceive(a, n) {
@@ -271,7 +221,73 @@ class Simulator extends React.Component {
 	}
 
 	initializeSimulator() {
+		let numProducers = this.state.settings.layout.numProducers
+		let numPartitions = this.state.settings.layout.numPartitions
+		let numConsumers = this.state.settings.layout.numConsumers
+
+		const initialProducers = []
+		for (let pId = 0; pId < numProducers ; pId++  ) {
+			const newProducer = {
+				producerId: pId,
+				backlog: 0,
+				createRate: 1,
+				produceRate: 1,
+				lastDestPartition: 0,
+				produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
+			}
+			initialProducers.push({...newProducer, ...this.state.settings.producer})
+		}
+
+		const initialPartitions = []
+		for (let aId = 0; aId < numPartitions ; aId++  ) {
+			const newPartition = {
+				partitionId: aId,
+				maxOffset: 0,
+				receivedThisTick: 0,
+				maxReceiveRate: 1,  
+				transmittedThisTick: 0,
+				maxTransmitRate: 1  
+			}
+			initialPartitions.push({ ...newPartition, ...this.state.settings.partition })
+		}
+
+		const initialConsumers = []
+		const partitionBalance = this.getPartitionBalance('round-robin', numPartitions, numConsumers)
+
+		for (let cId = 0; cId < numConsumers ; cId++  ) {
+			let srcPartitions = []
+			for (let aId of partitionBalance[cId].values()) {
+				srcPartitions.push({partitionId: aId, currentOffset: 0 })
+			}
+			const newConsumer = {
+				consumerId: cId,
+				consumeRate: 1,
+				srcPartitions: srcPartitions,
+				totalOffsets: 0
+			}
+			initialConsumers.push({...newConsumer, ...this.state.settings.consumer})
+		}
+
+		const finalState = {
+			tickNumber: 1,
+			maxTicks: 100,
+			running: false,
+			tickIntervalId: null,
+			tickMs: 150,
+			producers: initialProducers,
+			partitions: initialPartitions,
+			consumers: initialConsumers,
+			initialized: true
+		}
+
+		console.log("Initialized simulator with this state:")
+		console.log(finalState)
+		this.setState({
+			...this.state,
+			...finalState
+		});
 		//TODO
+
 	}
 
 	render() {
@@ -305,8 +321,12 @@ class Simulator extends React.Component {
 				<h1>Simulation</h1>
 				{ this.state.running && 
 					<button onClick = {() => this.stopSimulator()}>STOP</button>}
-				{ this.state.running || 
-					<button onClick = {() => this.resumeSimulator()}>resume</button>}
+				{ this.state.initialized && 
+					( this.state.running || 
+					<button onClick = {() => this.resumeSimulator()}>resume</button>)}
+				{ this.state.running ||
+					<button onClick = {() => this.initializeSimulator()}>INIT</button>}
+
 				<h2>Producers</h2>
 				<h3>Total Backlog: {totalBacklog}</h3>
 				{pComps}
