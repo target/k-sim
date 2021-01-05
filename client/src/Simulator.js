@@ -5,32 +5,35 @@ import { cloneDeep } from "lodash" // Because I am a horrible monster who can't 
 import Producer from './Producer.js';
 import Partition from './Partition.js';
 import Consumer from './Consumer.js';
+import SimulatorSettings from './SimulatorSettings.js';
 
 class Simulator extends React.Component {
 	constructor(props) {
 		super();
 		const initialProducers = []
 		for (let pId = 0; pId < props.numProducers ; pId++  ) {
-			initialProducers.push({
+			const newProducer = {
 				producerId: pId,
 				backlog: 0,
-				createRate: 3,
-				produceRate: 3,
+				createRate: 1,
+				produceRate: 1,
 				lastDestPartition: 0,
 				produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
-			})
+			}
+			initialProducers.push({...newProducer, ...props.settings.producer})
 		}
 
 		const initialPartitions = []
 		for (let aId = 0; aId < props.numPartitions ; aId++  ) {
-			initialPartitions.push({
+			const newPartition = {
 				partitionId: aId,
 				maxOffset: 0,
 				receivedThisTick: 0,
-				maxReceiveRate: 10,  
+				maxReceiveRate: 1,  
 				transmittedThisTick: 0,
-				maxTransmitRate: 10  
-			})
+				maxTransmitRate: 1  
+			}
+			initialPartitions.push({ ...newPartition, ...props.settings.partition })
 		}
 
 		const initialConsumers = []
@@ -41,15 +44,16 @@ class Simulator extends React.Component {
 			for (let aId of partitionBalance[cId].values()) {
 				srcPartitions.push({partitionId: aId, currentOffset: 0 })
 			}
-			initialConsumers.push({
+			const newConsumer = {
 				consumerId: cId,
-				consumeRate: 5,
+				consumeRate: 1,
 				srcPartitions: srcPartitions,
 				totalOffsets: 0
-			})
+			}
+			initialConsumers.push({...newConsumer, ...props.settings.consumer})
 		}
 
-		let finalState = {
+		const finalState = {
 			tickNumber: 0,
 			maxTicks: 100,
 			running: false,
@@ -265,11 +269,12 @@ class Simulator extends React.Component {
 		}
 
 		return(
-			<div className="kSim">
+			<div className="k-sim">
 				<div className="ticker"> 
 				  {this.state.running ? 'run' : 'STOP'} 
 					({this.state.tickNumber}/{this.state.maxTicks}) 
 				</div>
+				<h1>Simulation</h1>
 				<h2>Producers</h2>
 				<h3>Total Backlog: {totalBacklog}</h3>
 				{pComps}
@@ -279,6 +284,9 @@ class Simulator extends React.Component {
 				<h2>Consumers</h2>
 				<h3>Total Consumed: {totalConsumed}</h3>
 				{cComps}
+				{this.props.settings.showSettings && 
+					<SimulatorSettings settings={this.props.settings}/>
+				}
 			</div>
 		);
 	}
