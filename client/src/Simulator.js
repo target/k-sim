@@ -54,7 +54,7 @@ class Simulator extends React.Component {
 		}
 
 		const finalState = {
-			tickNumber: 0,
+			tickNumber: 1,
 			maxTicks: 100,
 			running: false,
 			tickIntervalId: null,
@@ -97,16 +97,7 @@ class Simulator extends React.Component {
 	}
 
 	componentDidMount() {
-		// should we roll this into the setState statement?
-		var tickIntervalId = setInterval(
-			() => this.tick(),   // It is unclear to me why I needed the () => here... but it only works that way!
-			this.state.tickMs
-		);  
-		this.setState({
-			...this.state,
-			tickIntervalId: tickIntervalId,
-			running: true
-		});
+		this.startTickInterval()
 	}
 
 	componentWillUnmount() {
@@ -228,23 +219,60 @@ class Simulator extends React.Component {
 			c.totalOffsets = totalOffsets
 		}
 
-		var newRunning = this.state.running
-		if (this.state.tickNumber > this.state.maxTicks) {
-			clearInterval(this.state.tickIntervalId)
-			newRunning = false
-		}
-
 		this.setState({
 			...this.state,
-			running: newRunning,
 			tickNumber: this.state.tickNumber + 1,
 			producers: newProducers,
 			partitions: newPartitions,
 			consumers: newConsumers
 		});
 		
+		if (this.state.tickNumber > this.state.maxTicks - 1) {
+			this.stopSimulator()
+		}
 	}
 
+	clearTickInterval() {
+		clearInterval(this.state.tickIntervalId)
+		this.setState({
+			...this.state,
+			tickIntervalId: null
+		})
+	}
+
+	startTickInterval() {
+		var tickIntervalId = setInterval(
+			() => this.tick(),   // It is unclear to me why I needed the () => here... but it only works that way!
+			this.state.tickMs
+		);  
+		this.setState({
+			...this.state,
+			tickIntervalId: tickIntervalId,
+			running: true
+		});
+
+	}
+
+	stopSimulator() {
+		this.setState({
+				...this.state,
+				running: false,
+			},
+			this.clearTickInterval //Callback to clear our interval timer
+		)
+	}
+
+	resumeSimulator() {
+		if (! this.state.running) {
+			if (this.state.tickIntervalId == null) {
+				this.startTickInterval()
+			}
+		}
+	}
+
+	initializeSimulator() {
+		//TODO
+	}
 
 	render() {
 		const pComps = []
@@ -275,6 +303,10 @@ class Simulator extends React.Component {
 					({this.state.tickNumber}/{this.state.maxTicks}) 
 				</div>
 				<h1>Simulation</h1>
+				{ this.state.running && 
+					<button onClick = {() => this.stopSimulator()}>STOP</button>}
+				{ this.state.running || 
+					<button onClick = {() => this.resumeSimulator()}>resume</button>}
 				<h2>Producers</h2>
 				<h3>Total Backlog: {totalBacklog}</h3>
 				{pComps}
