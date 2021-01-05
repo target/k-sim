@@ -326,6 +326,8 @@ class Simulator extends React.Component {
 					<button onClick = {() => this.resumeSimulator()}>resume</button>)}
 				{ this.state.running ||
 					<button onClick = {() => this.initializeSimulator()}>INIT</button>}
+				{ this.props.settings.showSettings && 
+					<SimulatorSettings settings={this.props.settings}/>}
 
 				<h2>Producers</h2>
 				<h3>Total Backlog: {totalBacklog}</h3>
@@ -336,9 +338,6 @@ class Simulator extends React.Component {
 				<h2>Consumers</h2>
 				<h3>Total Consumed: {totalConsumed}</h3>
 				{cComps}
-				{this.props.settings.showSettings && 
-					<SimulatorSettings settings={this.props.settings}/>
-				}
 			</div>
 		);
 	}
