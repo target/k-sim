@@ -23,7 +23,7 @@ class SimulatorSettings extends React.Component {
 			<li><strong>{k}</strong>: {this.props.settings.consumer[k]}</li>
 		)
 		return(
-			<div className="simulator-settings">
+			<div className="k-sim-settings">
 				<h1>Custom Settings</h1>
 				<h2>Layout</h2>
 				<ul>{layoutPropList}</ul>

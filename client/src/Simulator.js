@@ -7,6 +7,8 @@ import Partition from './Partition.js';
 import Consumer from './Consumer.js';
 import SimulatorSettings from './SimulatorSettings.js';
 
+import './Simulator.css'
+
 class Simulator extends React.Component {
 	constructor(props) {
 		super();
@@ -126,11 +128,11 @@ class Simulator extends React.Component {
 			// 1d: rollforward overflow
 			if (demand > n) {
 				//console.log("retry for ", p)
-				let numRetries = newPartitions.length / 3
+				let numRetries = 3 //newPartitions.length 
 				let r = 1
 				while ( (r < numRetries) && (demand > 0) ) {
-					destPartitionId++
-					if(destPartitionId >= newPartitions.length) { destPartitionId = 0 }
+					destPartitionId += Math.floor(Math.random()*newPartitions.length) //+ p.producerId //"randomly" skip around
+					destPartitionId = destPartitionId % newPartitions.length 
 					demand = demand - n
 					n = this.partitionAvailReceive(newPartitions[destPartitionId], demand)
 					if (n > 0) {
@@ -138,6 +140,7 @@ class Simulator extends React.Component {
 						newPartitions[destPartitionId].receivedThisTick = newPartitions[destPartitionId].receivedThisTick + n
 						p.backlog = p.backlog - n
 					}
+					r++
 				}
 			}
 			p.lastDestPartition = destPartitionId
@@ -270,10 +273,10 @@ class Simulator extends React.Component {
 
 		const finalState = {
 			tickNumber: 1,
-			maxTicks: 100,
+			maxTicks: (this.state.settings.maxTicks ? this.state.settings.maxTicks : 100),
 			running: false,
 			tickIntervalId: null,
-			tickMs: 150,
+			tickMs: Math.max(this.state.settings.tickMs, 50),
 			producers: initialProducers,
 			partitions: initialPartitions,
 			consumers: initialConsumers,
@@ -291,53 +294,113 @@ class Simulator extends React.Component {
 	}
 
 	render() {
-		const pComps = []
-		let totalBacklog = 0
-		for (const p of this.state.producers.values()) {
-			totalBacklog = totalBacklog + p.backlog
-			pComps.push(<Producer backlog={p.backlog} key={"Producer-"+p.producerId}/>)
+		let svgDim = {
+			width: 600,
+			height: 600
 		}
+		let partitionSvgLayout = {
+			w: 400,
+			h: 500,
+			tr: {
+				x: 100, // (600 - 400) / 2
+				y: 100, // (600 - 500)
+			},
+			rectMargin: 20 //Only on the X-axis, they are full-heighted
+		}
+		let partitionRectangles = [] // Data describing the rectangle of the thing
+		let rectX = partitionSvgLayout.tr.x + (partitionSvgLayout.rectMargin / 2) 
 
-		const aComps = []
-		let totalOffsets = 0
+		const aComps = [] // Actual DOM things
+
+		partitionSvgLayout.rectWidth = ( partitionSvgLayout.w - 
+			this.state.partitions.length * partitionSvgLayout.rectMargin ) /
+			this.state.partitions.length
+
+		let totalOffsets = 0 //TODO: Move this into the simulator, make a TOPIC object to aggregate it
 		for (const a of this.state.partitions.values()) {
 			totalOffsets = totalOffsets + a.maxOffset
-			aComps.push(<Partition maxOffset={a.maxOffset} key={"Partition-"+a.partitionId}  />)
+			let aR = { 
+				x: rectX,
+				y: 600 - Math.min(a.maxOffset, partitionSvgLayout.h),
+				width: partitionSvgLayout.rectWidth,
+				height: Math.min(a.maxOffset, partitionSvgLayout.h) 
+			}
+			partitionRectangles.push(aR)
+
+			aComps.push(<Partition a={a} aR={aR} key={"Partition-"+a.partitionId}  />)
+
+			rectX += partitionSvgLayout.rectMargin + partitionSvgLayout.rectWidth
+		}
+
+		const pComps = []
+		let totalBacklog = 0
+		let producerSvgLayout = {
+			w: 100,
+			h: 400,
+			tr: {
+				x: 0, // Margin for label stuff should be zero?
+				y: 20,  // 
+			},
+			bubbleSize: (400 / this.state.producers.length / 4) //margin is the same as bubble size
+		}
+		for (const p of this.state.producers.values()) {
+			totalBacklog = totalBacklog + p.backlog
+			pComps.push(<Producer p={p} svgLayout={producerSvgLayout} key={"Producer-"+p.producerId}/>)
 		}
 
 		const cComps = []
 		let totalConsumed = 0
+		let consumerSvgLayout = {
+			w: 100,
+			h: 400,
+			tr: {
+				x: 500, // (100 + 400)
+				y: 200, // (600 / )
+			},
+			//bubbleMargin: bubbleSize,
+			bubbleSize: (400 / this.state.consumers.length / 4) //margin is the same as bubble size
+		}
 		for (const c of this.state.consumers.values()) {
 			totalConsumed = totalConsumed + c.totalOffsets
-			cComps.push(<Consumer partitions={this.state.partitions} c={c} key={"Consumer-"+c.consumerId}/>)
+			cComps.push(<Consumer numConsumers={this.state.consumers.length} svgLayout={consumerSvgLayout} partitions={this.state.partitions} partitionRectangles={partitionRectangles} c={c} key={"Consumer-"+c.consumerId}/>)
 		}
 
 		return(
-			<div className="k-sim">
-				<div className="ticker"> 
-				  {this.state.running ? 'run' : 'STOP'} 
+			<div class="k-sim">
+				<div class="k-sim-control"> 
+					{this.state.running ? 'run' : 'STOP'} 
 					({this.state.tickNumber}/{this.state.maxTicks}) 
+					{ this.state.running && 
+						<button onClick = {() => this.stopSimulator()}>STOP</button>}
+					{ this.state.initialized && 
+						( this.state.running || 
+						<button onClick = {() => this.resumeSimulator()}>resume</button>)}
+					{ this.state.running ||
+						<button onClick = {() => this.initializeSimulator()}>INIT</button>}
+					{ this.props.settings.showSettings && 
+						<SimulatorSettings settings={this.props.settings}/>}
 				</div>
-				<h1>Simulation</h1>
-				{ this.state.running && 
-					<button onClick = {() => this.stopSimulator()}>STOP</button>}
-				{ this.state.initialized && 
-					( this.state.running || 
-					<button onClick = {() => this.resumeSimulator()}>resume</button>)}
-				{ this.state.running ||
-					<button onClick = {() => this.initializeSimulator()}>INIT</button>}
-				{ this.props.settings.showSettings && 
-					<SimulatorSettings settings={this.props.settings}/>}
-
-				<h2>Producers</h2>
-				<h3>Total Backlog: {totalBacklog}</h3>
-				{pComps}
-				<h2>Partitions</h2>
-				<h3>Total Offsets: {totalOffsets}</h3>
-				{aComps}
-				<h2>Consumers</h2>
-				<h3>Total Consumed: {totalConsumed}</h3>
-				{cComps}
+				<svg class="k-sim-svg" width={svgDim.width} height={svgDim.width}>
+					<g class="layer-1-partitions"> 
+						{aComps} 
+					</g>
+					<g class="layer-2-producers">
+						<text x={producerSvgLayout.tr.x} y={producerSvgLayout.tr.y}
+							dominantBaseline="middle" textAnchor="left"
+							textLength={producerSvgLayout.w}> 
+						Producer Backlog
+						</text>
+						{pComps}
+					</g>
+					<g class="layer-3-consumer"> 
+						<text x={consumerSvgLayout.tr.x} y={consumerSvgLayout.tr.y}
+							dominantBaseline="middle" textAnchor="left"
+							textLength={consumerSvgLayout.w}> 
+						Consumer Lag
+						</text>
+						{cComps} 
+					</g>
+				</svg>
 			</div>
 		);
 	}

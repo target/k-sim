@@ -1,5 +1,7 @@
 .App {
-  text-align: center;
+  /* text-align: center; */
+  /* FIXME: */
+  width: 905px; /* 900px + border size? */
 }
 
 .App-logo {

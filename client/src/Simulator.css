@@ -1,0 +1,18 @@
+.k-sim {
+    /* width: 800px; */
+    width: 100%;
+    /* border: 1px solid black; */
+    overflow: hidden; 
+}
+.k-sim-control {
+    width: 300px;
+    height:600px;
+    float:left; 
+    border: 1px solid blue;
+}
+.k-sim-svg {
+    width: 600px;
+    height: 600px;
+    border: 1px solid green;
+    float: left;
+}
