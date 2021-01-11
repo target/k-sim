@@ -94,6 +94,19 @@ class Simulator extends React.Component {
 		}
 	}
 
+	// shuffledIndexes: Produces an array of integers from 0 to n-1 that is randomly ordered.
+	shuffledIndexes(n){
+		let indexes = []
+		for (let i = 0 ; i < n ; i++ ) { indexes.push(i) }
+
+		// Thanks SO! https://stackoverflow.com/a/12646864/14584782
+		for (let i = indexes.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			[indexes[i], indexes[j]] = [indexes[j], indexes[i]];
+		}
+		return indexes
+	}
+
 	tick() {
 		// It's wasteful, but we can optimize for speed by using a real language later.
 		var newProducers = cloneDeep(this.state.producers)
@@ -107,7 +120,8 @@ class Simulator extends React.Component {
 		}
 
 		// Step 1: Create and Produce!
-		for (let p of newProducers) {
+		for (let pIdx of this.shuffledIndexes(newProducers.length)) {
+			let p = newProducers[pIdx]
 			let destPartitionId = p.lastDestPartition  // IMPORTANT: each producer will have it's own choices about destination
 			destPartitionId++
 			if(destPartitionId >= newPartitions.length) { destPartitionId = 0 }
@@ -147,10 +161,12 @@ class Simulator extends React.Component {
 		}
 
 		// Step 2: Consume!
-		for (let c of newConsumers) {
+		for (let cIdx of this.shuffledIndexes(newConsumers.length) ) {
+			let c=newConsumers[cIdx]
 			let consumeCap = c.consumeRate
 			let totalOffsets = 0
-			for (let a of c.srcPartitions) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
+			for (let aIdx of this.shuffledIndexes(c.srcPartitions.length)) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
+				let a = c.srcPartitions[aIdx]
 				let avail = (newPartitions[a.partitionId].maxOffset - a.currentOffset)
 				if (avail < 0) { 
 					// Shouldn't be here!
@@ -271,23 +287,28 @@ class Simulator extends React.Component {
 			initialConsumers.push({...newConsumer, ...this.state.settings.consumer})
 		}
 
-		const finalState = {
+		const generalDefaults = {
 			tickNumber: 1,
-			maxTicks: (this.state.settings.maxTicks ? this.state.settings.maxTicks : 100),
+			maxTicks: 100,
+			tickMs: 150
+		}
+
+		const finalState = {
 			running: false,
 			tickIntervalId: null,
-			tickMs: Math.max(this.state.settings.tickMs, 50),
+			initialized: true,
 			producers: initialProducers,
 			partitions: initialPartitions,
-			consumers: initialConsumers,
-			initialized: true
+			consumers: initialConsumers
 		}
 
 		console.log("Initialized simulator with this state:")
 		console.log(finalState)
 		this.setState({
 			...this.state,
-			...finalState
+			...finalState,
+			...generalDefaults,
+			...this.state.settings.general
 		});
 		//TODO
 
@@ -368,15 +389,14 @@ class Simulator extends React.Component {
 		return(
 			<div class="k-sim">
 				<div class="k-sim-control"> 
-					{this.state.running ? 'run' : 'STOP'} 
-					({this.state.tickNumber}/{this.state.maxTicks}) 
 					{ this.state.running && 
-						<button onClick = {() => this.stopSimulator()}>STOP</button>}
+						<button class="playback" onClick = {() => this.stopSimulator()}>stop</button>}
 					{ this.state.initialized && 
 						( this.state.running || 
-						<button onClick = {() => this.resumeSimulator()}>resume</button>)}
+						<button class="playback" onClick = {() => this.resumeSimulator()}>play</button>)}
 					{ this.state.running ||
-						<button onClick = {() => this.initializeSimulator()}>INIT</button>}
+						<button class="playback" onClick = {() => this.initializeSimulator()}>init</button>}
+					<br/>(tick: {this.state.tickNumber}/{this.state.maxTicks}) 
 					{ this.props.settings.showSettings && 
 						<SimulatorSettings settings={this.props.settings}/>}
 				</div>

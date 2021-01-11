@@ -10,15 +10,18 @@ class App extends Component {
 				producer: { backlog: 650, createRate: 0, produceRate: 15 },
 				partition: { maxReceiveRate: 3, maxTransmitRate: 3 },
 				consumer: { consumeRate: 4 },
-				partitionBalanceStrategy: 'round-robin',
-				showSettings: true,
 				layout: {
 					numProducers: 3,
-					numPartitions: 7,
+					numPartitions: 4,
 					numConsumers: 3
 				},
-				maxTicks: 200,
-				tickMs: 66
+				partitionBalanceStrategy: 'round-robin',
+				general: {
+					tickNumber: 1,
+					maxTicks: 200,
+					tickMs: 66
+				},
+				showSettings: true
 			},
 		}
 	}
