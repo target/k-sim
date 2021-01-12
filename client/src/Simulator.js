@@ -5,7 +5,7 @@ import { cloneDeep } from "lodash" // Because I am a horrible monster who can't 
 import Producer from './Producer.js';
 import Partition from './Partition.js';
 import Consumer from './Consumer.js';
-import SimulatorSettings from './SimulatorSettings.js';
+import SimulatorController from './SimulatorController.js';
 
 import './Simulator.css'
 
@@ -239,54 +239,93 @@ class Simulator extends React.Component {
 		}
 	}
 
+	makeProducer(pId){
+		const newProducer = {
+			producerId: pId,
+			backlog: 0,
+			createRate: 1, 
+			produceRate: 1,
+			lastDestPartition: 0,
+			produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
+		}
+		return({...newProducer, ...this.state.settings.producer})
+	}
+
+	makePartition(aId){
+		const newPartition = {
+			partitionId: aId,
+			maxOffset: 0,
+			receivedThisTick: 0,
+			maxReceiveRate: 1,  
+			transmittedThisTick: 0,
+			maxTransmitRate: 1  
+		}
+		return({ ...newPartition, ...this.state.settings.partition })
+	}
+
+	makeConsumer(cId, srcPartitions=[]){
+		const newConsumer = {
+			consumerId: cId,
+			consumeRate: 1,
+			srcPartitions: srcPartitions,
+			totalOffsets: 0
+		}
+		return({...newConsumer, ...this.state.settings.consumer})
+	}
+
+	getCurrentOffsets(consumers, partitionsExpected){
+		let offsetData = {}
+		for(let c of consumers.values()){
+			for(let aData of c['srcPartitions'].values()){
+				let key = `p-${aData.partitionId}`
+				offsetData[key] = aData
+			}
+		}
+		let offsetArray = []
+		for(let aId = 0; aId < partitionsExpected; aId++){
+			let key = `p-${aId}`
+			if(key in offsetData){
+				offsetArray.push(offsetData[key])
+			} else {
+				offsetArray.push({partitionId: aId, currentOffset: 0 }) //BUG: Implement consumer groups
+			}
+		}
+		return(offsetArray)
+	}
+
+	consumerGroupRebalance(strategy, partitions, consumers){
+		let finalConsumers = []
+		const partitionBalance = this.getPartitionBalance(strategy, partitions.length, consumers.length)
+		const offsetArray = this.getCurrentOffsets(consumers, partitions.length)
+		for (let cId = 0; cId < consumers.length ; cId++  ) {
+			let srcPartitions = []
+			for (let aId of partitionBalance[cId].values()) {
+				srcPartitions.push(offsetArray[aId])
+			}
+			finalConsumers.push(this.makeConsumer(cId, srcPartitions))
+		}
+		return(finalConsumers)
+	}
+
 	initializeSimulator() {
 		let numProducers = this.state.settings.layout.numProducers
 		let numPartitions = this.state.settings.layout.numPartitions
 		let numConsumers = this.state.settings.layout.numConsumers
 
-		const initialProducers = []
+		const finalProducers = []
 		for (let pId = 0; pId < numProducers ; pId++  ) {
-			const newProducer = {
-				producerId: pId,
-				backlog: 0,
-				createRate: 1,
-				produceRate: 1,
-				lastDestPartition: 0,
-				produceStrategy: "tick-next-with-overflow" //advances the partition every tick, and also on cases of overflow
-			}
-			initialProducers.push({...newProducer, ...this.state.settings.producer})
+			finalProducers.push(this.makeProducer(pId))
 		}
 
-		const initialPartitions = []
+		const finalPartitions = []
 		for (let aId = 0; aId < numPartitions ; aId++  ) {
-			const newPartition = {
-				partitionId: aId,
-				maxOffset: 0,
-				receivedThisTick: 0,
-				maxReceiveRate: 1,  
-				transmittedThisTick: 0,
-				maxTransmitRate: 1  
-			}
-			initialPartitions.push({ ...newPartition, ...this.state.settings.partition })
+			finalPartitions.push(this.makePartition(aId))
 		}
 
 		const initialConsumers = []
-		const partitionBalance = this.getPartitionBalance('round-robin', numPartitions, numConsumers)
 
-		for (let cId = 0; cId < numConsumers ; cId++  ) {
-			let srcPartitions = []
-			for (let aId of partitionBalance[cId].values()) {
-				srcPartitions.push({partitionId: aId, currentOffset: 0 })
-			}
-			const newConsumer = {
-				consumerId: cId,
-				consumeRate: 1,
-				srcPartitions: srcPartitions,
-				totalOffsets: 0
-			}
-			initialConsumers.push({...newConsumer, ...this.state.settings.consumer})
-		}
-
+		for (let cId = 0; cId < numConsumers ; cId++  ) { initialConsumers.push(this.makeConsumer(cId)) }
+		const finalConsumers = this.consumerGroupRebalance('round-robin', finalPartitions, initialConsumers)
 		const generalDefaults = {
 			tickNumber: 1,
 			maxTicks: 100,
@@ -297,9 +336,9 @@ class Simulator extends React.Component {
 			running: false,
 			tickIntervalId: null,
 			initialized: true,
-			producers: initialProducers,
-			partitions: initialPartitions,
-			consumers: initialConsumers
+			producers: finalProducers,
+			partitions: finalPartitions,
+			consumers: finalConsumers
 		}
 
 		console.log("Initialized simulator with this state:")
@@ -312,6 +351,84 @@ class Simulator extends React.Component {
 		});
 		//TODO
 
+	}
+
+	simControl(command){
+		// TODO: Check that we should issue these commands
+		switch (command) {
+			case 'init':
+				this.initializeSimulator()
+				break;
+			case 'stop':
+				this.stopSimulator()
+				break;
+			case 'play':
+			  this.resumeSimulator()
+				break;
+			default:
+			  console.log(`Invalid Sim Control Received ${command}.`);
+		}
+	}
+
+	simMutate(payload){
+		// console.log('Incoming payload:', payload)
+		for(let action of payload.values()) {
+			switch(action['actionType']){
+				case 'create':
+					switch(action['simType']){
+						case 'producer':
+							let pId = this.state.producers.length
+							let newProducerData = {
+								producers: this.state.producers.concat([this.makeProducer(pId)])
+							} 
+							this.setState({
+								...this.state,
+								...newProducerData
+							})
+							break;
+						case 'partition':
+							let aId = this.state.partitions.length
+							let newPartitionData = {
+								partitions: this.state.partitions.concat([this.makePartition(aId)])
+							}
+							let newConsumerData = {
+								consumers: this.consumerGroupRebalance(
+									'round-robin', 
+									newPartitionData.partitions,
+									this.state.consumers)
+							}
+							this.setState({
+								...this.state,
+								...newPartitionData,
+								...newConsumerData
+							})
+							break;
+						case 'consumer':
+								let cId = this.state.consumers.length
+
+								let addedConsumerData = {
+									consumers: this.consumerGroupRebalance(
+										'round-robin', 
+										this.state.partitions,
+										this.state.consumers.concat([this.makeConsumer(cId)]))
+								}
+								this.setState({
+									...this.state,
+									...addedConsumerData
+								})
+							break;
+						default:
+							console.log('Invalid Sim Mutate Type')			
+					}
+					break;
+				case 'remove':
+					break;
+				case 'update':
+					break;
+				default:
+					console.log('Invalid Sim Mutate Action Type')			
+			}
+		}
 	}
 
 	render() {
@@ -388,18 +505,8 @@ class Simulator extends React.Component {
 
 		return(
 			<div class="k-sim">
-				<div class="k-sim-control"> 
-					{ this.state.running && 
-						<button class="playback" onClick = {() => this.stopSimulator()}>stop</button>}
-					{ this.state.initialized && 
-						( this.state.running || 
-						<button class="playback" onClick = {() => this.resumeSimulator()}>play</button>)}
-					{ this.state.running ||
-						<button class="playback" onClick = {() => this.initializeSimulator()}>init</button>}
-					<br/>(tick: {this.state.tickNumber}/{this.state.maxTicks}) 
-					{ this.props.settings.showSettings && 
-						<SimulatorSettings settings={this.props.settings}/>}
-				</div>
+				<SimulatorController simControl={(v)=>{this.simControl(v)}} simMutate={(p)=>{this.simMutate(p)}} state={this.state}/>
+				
 				<svg class="k-sim-svg" width={svgDim.width} height={svgDim.width}>
 					<g class="layer-1-partitions"> 
 						{aComps} 

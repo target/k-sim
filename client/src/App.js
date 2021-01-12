@@ -11,9 +11,9 @@ class App extends Component {
 				partition: { maxReceiveRate: 3, maxTransmitRate: 3 },
 				consumer: { consumeRate: 4 },
 				layout: {
-					numProducers: 3,
-					numPartitions: 4,
-					numConsumers: 3
+					numProducers: 1,
+					numPartitions: 1,
+					numConsumers: 1
 				},
 				partitionBalanceStrategy: 'round-robin',
 				general: {
