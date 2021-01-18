@@ -6,6 +6,7 @@ import Producer from './Producer.js';
 import Partition from './Partition.js';
 import Consumer from './Consumer.js';
 import SimulatorController from './SimulatorController.js';
+import SimulatorContext from './SimulatorContext.js'
 
 import './Simulator.css'
 
@@ -607,6 +608,13 @@ class Simulator extends React.Component {
 		}
 	}
 
+	handleSimClick(obj){
+		console.log('handleSimClick', obj)
+		this.setState({ 
+			selectedObj: obj
+			})
+	}
+
 	render() {
 		let svgDim = {
 			width: 600,
@@ -641,7 +649,7 @@ class Simulator extends React.Component {
 			}
 			partitionRectangles.push(aR)
 
-			aComps.push(<Partition a={a} aR={aR} key={"Partition-"+a.partitionId}  />)
+			aComps.push(<Partition a={a} aR={aR} handleSimClick={(p)=>{this.handleSimClick(p)}} key={"Partition-"+a.partitionId}  />)
 
 			rectX += partitionSvgLayout.rectMargin + partitionSvgLayout.rectWidth
 		}
@@ -659,7 +667,7 @@ class Simulator extends React.Component {
 		}
 		for (const p of this.state.producers.values()) {
 			totalBacklog = totalBacklog + p.backlog
-			pComps.push(<Producer p={p} svgLayout={producerSvgLayout} key={"Producer-"+p.producerId}/>)
+			pComps.push(<Producer p={p} svgLayout={producerSvgLayout} handleSimClick={(p)=>{this.handleSimClick(p)}} key={"Producer-"+p.producerId}/>)
 		}
 
 		const cComps = []
@@ -676,7 +684,7 @@ class Simulator extends React.Component {
 		}
 		for (const c of this.state.consumers) {
 			totalConsumed = totalConsumed + c.totalOffsets
-			cComps.push(<Consumer numConsumers={this.state.consumers.length} svgLayout={consumerSvgLayout} partitions={this.state.partitions} partitionRectangles={partitionRectangles} c={c} g={this.state.consumerGroup} key={"Consumer-"+c.consumerId}/>)
+			cComps.push(<Consumer numConsumers={this.state.consumers.length} svgLayout={consumerSvgLayout} partitions={this.state.partitions} partitionRectangles={partitionRectangles} c={c} g={this.state.consumerGroup} handleSimClick={(p)=>{this.handleSimClick(p)}} key={"Consumer-"+c.consumerId}/>)
 		}
 
 		return(
@@ -704,6 +712,7 @@ class Simulator extends React.Component {
 						{cComps} 
 					</g>
 				</svg>
+				<SimulatorContext simMutate={(p)=>{this.simMutate(p)}} state={this.state} />
 			</div>
 		);
 	}

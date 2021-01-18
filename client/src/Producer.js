@@ -26,7 +26,8 @@ class ProducerBacklogBubble extends React.Component {
 				cy={this.props.yPos} 
 				fill={fillColor}
 				stroke="black"
-				r={r} />
+				r={r}
+				onClick={() => this.props.handleSimClick({type: 'producer', id: this.props.producerId})} />
 			<text 
 				x={this.props.xPos} 
 				y={this.props.yPos}
@@ -64,6 +65,7 @@ class Producer extends React.Component {
 			bubbleSize={this.props.svgLayout.bubbleSize} //Its a lie, but it's close enough
 			producerId={pId}
 			backlog={this.props.p.backlog}
+			handleSimClick={(p)=>{this.props.handleSimClick(p)}}
 		/>
 
 		return(

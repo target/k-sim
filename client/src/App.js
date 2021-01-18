@@ -21,7 +21,8 @@ class App extends Component {
 					maxTicks: 10000,
 					tickMs: 66
 				},
-				showSettings: true
+				showSettings: true,
+				selectedObj: null
 			},
 		}
 	}

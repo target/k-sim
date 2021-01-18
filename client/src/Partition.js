@@ -20,6 +20,7 @@ class Partition extends React.Component {
 					height={this.props.aR.height}
 					fill='steelblue'
 					stroke='black'
+					onClick={() => this.props.handleSimClick({type: 'partition', id: this.props.a.partitionId})}
 				/>
 				<text 
 					textAnchor="end" 
