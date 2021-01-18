@@ -16,37 +16,12 @@ class Simulator extends React.Component {
 			settings: props.settings,
 			producers: [],
 			partitions: [],
-			consumers: []
+			consumers: [],
+			consumerGoup: {}
 		}
 		this.initializeSimulator()
 	}
 
-	getPartitionBalance(strategy, numPartitions, numConsumers) {
-		strategy = 'round-robin' // only current supported strategy
-
-		//console.log("gPB input: ", strategy, numPartitions, numConsumers)
-		let partitionBalance = []
-
-		if (strategy === 'round-robin') {
-			//console.log("attempt to apply round-robin")
-			for (let cId = 0; cId < numConsumers; cId++ ) {
-				//console.log("apply for consumer: " + cId)
-				let aId = cId
-				let myPartitions = []
-				while (aId < numPartitions) {
-					myPartitions.push(aId)
-					aId = aId + numConsumers
-				}
-				//console.log(myPartitions)
-				partitionBalance.push(myPartitions)
-			}
-
-		} else {
-			console.log("ERROR: Unknown partition balance strategy: " + strategy)
-		}
-		//console.log("pB result: ", partitionBalance)
-		return(partitionBalance)
-	}
 
 	componentDidMount() {
 		//this.startTickInterval()
@@ -112,6 +87,7 @@ class Simulator extends React.Component {
 		var newProducers = cloneDeep(this.state.producers)
 		var newPartitions = cloneDeep(this.state.partitions)
 		var newConsumers = cloneDeep(this.state.consumers)
+		var newConsumerGroup = cloneDeep(this.state.consumerGroup)
 
 		// Initialize the rate data
 		for (let a of newPartitions) {
@@ -161,13 +137,16 @@ class Simulator extends React.Component {
 		}
 
 		// Step 2: Consume!
-		for (let cIdx of this.shuffledIndexes(newConsumers.length) ) {
-			let c=newConsumers[cIdx]
+		for (let cId of this.shuffledIndexes(newConsumerGroup.partitionMapping.length) ) {
+			let c=newConsumers[cId]
 			let consumeCap = c.consumeRate
 			let totalOffsets = 0
-			for (let aIdx of this.shuffledIndexes(c.srcPartitions.length)) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
-				let a = c.srcPartitions[aIdx]
-				let avail = (newPartitions[a.partitionId].maxOffset - a.currentOffset)
+			for (let mIdx of this.shuffledIndexes(newConsumerGroup.partitionMapping[cId].length)) { //TODO:  What to do if there wasn't enough drain capacity? shuffle?
+				let aId = newConsumerGroup.partitionMapping[cId][mIdx]
+				let o = newConsumerGroup.offsets[aId]
+
+				let avail = (newPartitions[aId].maxOffset - o.currentOffset)
+				//console.log(`consume(${cId}) a(${aId}) avail: ${avail} o:`, o)
 				if (avail < 0) { 
 					// Shouldn't be here!
 					//console.log("ERROR: Consumer {c} on {p} is in an impossible place?")
@@ -176,14 +155,14 @@ class Simulator extends React.Component {
 						//console.log("Consumer {c} does not have *any* capacity to service {avail} waiting records on {a}")
 					} else {
 						//// Attempt to get the maxiumum available transfer or all the available records
-						let n = Math.min( consumeCap, this.partitionAvailTransmit(newPartitions[a.partitionId], avail) )
-						a.currentOffset = a.currentOffset + n
-						newPartitions[a.partitionId].transmitThisTick = newPartitions[a.partitionId] - n
+						let n = Math.min( consumeCap, this.partitionAvailTransmit(newPartitions[aId], avail) )
+						o.currentOffset = o.currentOffset + n
+						newPartitions[aId].transmitThisTick = newPartitions[aId] - n
 						consumeCap = consumeCap - n
 
 					}
 				}
-				totalOffsets = totalOffsets + a.currentOffset // BUG: Not exactly true, but whatever, we don't rebalance
+				totalOffsets = totalOffsets + o.currentOffset // BUG: Not exactly true, but whatever, we don't rebalance
 			}
 			c.totalOffsets = totalOffsets
 		}
@@ -193,7 +172,8 @@ class Simulator extends React.Component {
 			tickNumber: this.state.tickNumber + 1,
 			producers: newProducers,
 			partitions: newPartitions,
-			consumers: newConsumers
+			consumers: newConsumers,
+			consumerGroup: newConsumerGroup
 		});
 		
 		if (this.state.tickNumber > this.state.maxTicks - 1) {
@@ -263,48 +243,196 @@ class Simulator extends React.Component {
 		return({ ...newPartition, ...this.state.settings.partition })
 	}
 
-	makeConsumer(cId, srcPartitions=[]){
+	makeConsumer(cId){
 		const newConsumer = {
 			consumerId: cId,
 			consumeRate: 1,
-			srcPartitions: srcPartitions,
 			totalOffsets: 0
 		}
 		return({...newConsumer, ...this.state.settings.consumer})
 	}
 
-	getCurrentOffsets(consumers, partitionsExpected){
-		let offsetData = {}
-		for(let c of consumers.values()){
-			for(let aData of c['srcPartitions'].values()){
-				let key = `p-${aData.partitionId}`
-				offsetData[key] = aData
-			}
+	makeConsumerGroup(partitions, consumers) {
+		/* TOPIC: storing derived vs required
+		   consumerLag is derived from consumerOffset and maxOffset of a partition
+		   should we store it in the structure here?
+		   for now, we have the tooling to calculate so let's not refactor
+		   */
+		let consumerGroup = {
+			partitionMapping: this.getPartitionBalance(this.state.settings.strategy, partitions.length, consumers.length),
+			offsets: [],
 		}
-		let offsetArray = []
-		for(let aId = 0; aId < partitionsExpected; aId++){
-			let key = `p-${aId}`
-			if(key in offsetData){
-				offsetArray.push(offsetData[key])
-			} else {
-				offsetArray.push({partitionId: aId, currentOffset: 0 }) //BUG: Implement consumer groups
-			}
+
+		for(let a of partitions){
+			// TODO:  Add option to initialize to a.maxOffset, it's a real kafka setting after all!
+			consumerGroup.offsets.push({partitionId: a.partitionId, currentOffset: 0})
 		}
-		return(offsetArray)
+		return(consumerGroup)
 	}
 
-	consumerGroupRebalance(strategy, partitions, consumers){
-		let finalConsumers = []
-		const partitionBalance = this.getPartitionBalance(strategy, partitions.length, consumers.length)
-		const offsetArray = this.getCurrentOffsets(consumers, partitions.length)
-		for (let cId = 0; cId < consumers.length ; cId++  ) {
-			let srcPartitions = []
-			for (let aId of partitionBalance[cId].values()) {
-				srcPartitions.push(offsetArray[aId])
+	getPartitionBalance(strategy, numPartitions, numConsumers) {
+		strategy = 'round-robin' // only current supported strategy
+
+		//console.log("gPB input: ", strategy, numPartitions, numConsumers)
+		let partitionBalance = []
+
+		if (strategy === 'round-robin') {
+			//console.log("attempt to apply round-robin")
+			for (let cId = 0; cId < numConsumers; cId++ ) {
+				//console.log("apply for consumer: " + cId)
+				let aId = cId
+				let myPartitions = []
+				while (aId < numPartitions) {
+					myPartitions.push(aId)
+					aId = aId + numConsumers
+				}
+				//console.log(myPartitions)
+				partitionBalance.push(myPartitions)
 			}
-			finalConsumers.push(this.makeConsumer(cId, srcPartitions))
+
+		} else {
+			console.log("ERROR: Unknown partition balance strategy: " + strategy)
 		}
-		return(finalConsumers)
+		//console.log("pB result: ", partitionBalance)
+		return(partitionBalance)
+	}
+
+	deleteIndexesFromArray(sortedIndexes, arr) {
+		//returns a new copy of the array with the indexes removed
+		//if invalid indexes are supplied, elements may not be deleted
+		let newArr = []
+
+		let delPtr = 0
+		for (let oldPtr = 0; oldPtr < arr.length ; oldPtr++ ) {
+			if (!(sortedIndexes[delPtr] === oldPtr)) {
+				newArr.push(arr[oldPtr])
+			} else {
+				delPtr++
+			}
+		}
+		return newArr
+	}
+
+	deletePartitionsFromConsumerGroup(partitionsDeleted, newPartitions, consumerGroup) {
+		let indexesToDelete = [...partitionsDeleted].sort((a,b)=>a-b)
+
+		let newOffsets = []
+
+		let delPtr = 0
+		for (let oldPtr = 0; oldPtr < consumerGroup.offsets.length ; oldPtr++ ) {
+			if (!(indexesToDelete[delPtr] === oldPtr)) {
+				let o = consumerGroup.offsets[oldPtr]
+				o.partitionId -= delPtr // Need to shift the partition IDs downward for each thing deleted so far.
+				newOffsets.push(o)
+			} else {
+				delPtr++
+			}
+		}
+
+		let newConsumerGroup = {
+			...this.consumerGroupRebalance(
+				this.state.settings.partitionBalanceStrategy, 
+				newPartitions,
+				this.state.consumers,
+				consumerGroup),
+			offsets: newOffsets
+		}
+
+		return newConsumerGroup
+	}
+
+	//NOTE: This handler will mutate both partitions and consumerGroup in the state
+	deletePartitions(partitionsDeleted){
+		let indexesToDelete = [...partitionsDeleted].sort((a,b)=>a-b)
+		let newPartitions=this.deleteIndexesFromArray(indexesToDelete, this.state.partitions)
+
+		//TODO: This is an interesting thing, should we instantly rebalance for the consumerGroup?
+
+		this.setState({
+			...this.state,
+			partitions: newPartitions,
+			consumerGroup: this.deletePartitionsFromConsumerGroup(partitionsDeleted, newPartitions, this.state.consumerGroup)
+		})
+	}
+
+	//NOTE: This handler will mutate both partitions and consumerGroup in the state
+	createPartitions(n){
+		let newPartitions = cloneDeep(this.state.partitions)
+		let newOffsets = cloneDeep(this.state.consumerGroup.offsets)
+		// console.log("before making partitions...", this.state)
+
+		let finalLength = this.state.partitions.length + n
+		for (let aId = this.state.partitions.length; aId < finalLength; aId++) {
+			newPartitions.push(this.makePartition(aId))
+			newOffsets.push({partitionId: aId, currentOffset: 0}) //TODO: Consider leaving this for rebalance?
+		}
+
+		//TODO: This is an interesting thing, should we instantly rebalance the consumerGroup?
+		let newConsumerGroup = this.consumerGroupRebalance(
+				this.state.settings.partitionBalanceStrategy, 
+				newPartitions,
+				this.state.consumers,
+				this.state.consumerGroup
+			)
+		newConsumerGroup.offsets = newOffsets
+
+		// console.log("created partitions...", newPartitions, newConsumerGroup)
+		this.setState({
+			...this.state,
+			partitions: newPartitions, 
+			consumerGroup: newConsumerGroup
+		})
+	}
+
+	//NOTE: This handler will mutate both consumers consumeGroup in the state
+	deleteConsumers(consumersDeleted){
+		let indexesToDelete = [...consumersDeleted].sort((a,b)=>a-b)
+		let newConsumers=this.deleteIndexesFromArray(indexesToDelete, this.state.consumers)
+
+		//TODO: This is an interesting thing, should we instantly rebalance the consumerGroup?
+		let newConsumerGroup = this.consumerGroupRebalance(
+				this.state.settings.partitionBalanceStrategy,
+				this.state.partitions, 
+				newConsumers, 
+				this.state.consumerGroup)
+
+		this.setState({
+			...this.state,
+			consumers: newConsumers,
+			consumerGroup: newConsumerGroup
+		})
+	}
+
+	//NOTE: This handler will mutate both consumers and consumerGroup in the state
+	createConsumers(n){
+		let newConsumers = cloneDeep(this.state.consumers)
+
+		let finalLength = this.state.consumers.length + n
+		for (let cId = this.state.consumers.length; cId < finalLength; cId++) {
+			newConsumers.push(this.makeConsumer(cId))
+		}
+
+		let newConsumerGroup = this.consumerGroupRebalance(
+				'round-robin', 
+				this.state.partitions,
+				newConsumers,
+				this.state.consumerGroup)
+
+		this.setState({
+			...this.state,
+			consumers: newConsumers,
+			consumerGroup: newConsumerGroup
+		})
+	}
+
+	consumerGroupRebalance(strategy, partitions, consumers, consumerGroup){
+		// 1: Get the desired mapping state
+		const newConsumerGroup = {
+			...consumerGroup,
+			partitionMapping: this.getPartitionBalance(strategy, partitions.length, consumers.length)
+		}
+
+		return newConsumerGroup
 	}
 
 	initializeSimulator() {
@@ -322,10 +450,11 @@ class Simulator extends React.Component {
 			finalPartitions.push(this.makePartition(aId))
 		}
 
-		const initialConsumers = []
+		const finalConsumers = []
 
-		for (let cId = 0; cId < numConsumers ; cId++  ) { initialConsumers.push(this.makeConsumer(cId)) }
-		const finalConsumers = this.consumerGroupRebalance('round-robin', finalPartitions, initialConsumers)
+		for (let cId = 0; cId < numConsumers ; cId++  ) { finalConsumers.push(this.makeConsumer(cId)) }
+		const finalConsumerGroup = this.consumerGroupRebalance(this.state.settings.partitionBalanceStrategy, finalPartitions, finalConsumers, this.makeConsumerGroup(finalPartitions, finalConsumers))
+
 		const generalDefaults = {
 			tickNumber: 1,
 			maxTicks: 100,
@@ -338,7 +467,8 @@ class Simulator extends React.Component {
 			initialized: true,
 			producers: finalProducers,
 			partitions: finalPartitions,
-			consumers: finalConsumers
+			consumers: finalConsumers,
+			consumerGroup: finalConsumerGroup
 		}
 
 		console.log("Initialized simulator with this state:")
@@ -387,43 +517,89 @@ class Simulator extends React.Component {
 							})
 							break;
 						case 'partition':
-							let aId = this.state.partitions.length
-							let newPartitionData = {
-								partitions: this.state.partitions.concat([this.makePartition(aId)])
-							}
-							let newConsumerData = {
-								consumers: this.consumerGroupRebalance(
-									'round-robin', 
-									newPartitionData.partitions,
-									this.state.consumers)
-							}
-							this.setState({
-								...this.state,
-								...newPartitionData,
-								...newConsumerData
-							})
+							this.createPartitions(1)
 							break;
 						case 'consumer':
-								let cId = this.state.consumers.length
-
-								let addedConsumerData = {
-									consumers: this.consumerGroupRebalance(
-										'round-robin', 
-										this.state.partitions,
-										this.state.consumers.concat([this.makeConsumer(cId)]))
-								}
-								this.setState({
-									...this.state,
-									...addedConsumerData
-								})
+							this.createConsumers(1)
 							break;
 						default:
 							console.log('Invalid Sim Mutate Type')			
 					}
 					break;
-				case 'remove':
-					break;
+				//case 'read':  //Getter methods can just ask for state or receive it as a property for now
+				//	break;
 				case 'update':
+					break;
+				case 'delete':
+					switch(action['simType']){
+						case 'producer':
+							let delIdx = this.state.producers.length - 1 //Maximum valid producer, and the default
+							if ( action['id'] < delIdx && 
+								action['id'] >= 0 ) {
+									delIdx = action['id'] //BUG: Not forcing to int
+								}
+							let newProducers = []
+							let newIdx = 0
+							for (let pIdx = 0; pIdx < this.state.producers.length; pIdx++) {
+								if (pIdx === delIdx) {
+									//pass
+								} else {
+									newProducers.push({
+										...this.state.producers[pIdx],
+										producerId: newIdx
+									})
+									newIdx++
+								}
+							}
+							//console.log("done removing", this.state.producers, newProducers)
+							this.setState({
+								...this.state,
+								producers: newProducers
+							})
+							break;
+						case 'partition':
+							let aDelIdx = this.state.partitions.length - 1 //Maximum valid producer, and the default
+							if ( action['id'] < aDelIdx && 
+								action['id'] >= 0 ) {
+									aDelIdx = action['id'] //BUG: Not forcing to int
+								}
+							this.deletePartitions([aDelIdx])
+							break;
+						case 'consumer':
+							let cDelIdx = this.state.consumers.length - 1 //Maximum valid producer, and the default
+							if ( action['id'] < cDelIdx && 
+								action['id'] >= 0 ) {
+									cDelIdx = action['id'] //BUG: Not forcing to int
+								}
+							this.deleteConsumers([cDelIdx])
+							break;
+						default:
+							console.log('Invalid Sim Mutate Type')			
+					}	
+					break;
+				case 'chaos': //Handy dandy tester of your architecture and our code!  Dispatches random supported actions of each type.
+					for (let chaosRun = 0; chaosRun < action['count']; chaosRun++) {
+						switch(Math.floor(Math.random() * 6)){
+							case 0:
+								this.simMutate([{actionType: 'create', simType: 'producer'}])
+								break;
+							case 1:
+								this.simMutate([{actionType: 'create', simType: 'partition'}])
+								break;
+							case 2:
+								this.simMutate([{actionType: 'create', simType: 'consumer'}])
+								break;
+							case 3:
+								this.simMutate([{actionType: 'delete', simType: 'producer', id: Math.floor(Math.random() * this.state.producers.length)}])
+								break;
+							case 4:
+								this.simMutate([{actionType: 'delete', simType: 'partition', id: Math.floor(Math.random() * this.state.partitions.length)}])
+								break;
+							case 5:
+								this.simMutate([{actionType: 'delete', simType: 'consumer', id: Math.floor(Math.random() * this.state.consumers.length)}])
+								break;
+						}
+					}
 					break;
 				default:
 					console.log('Invalid Sim Mutate Action Type')			
@@ -498,9 +674,9 @@ class Simulator extends React.Component {
 			//bubbleMargin: bubbleSize,
 			bubbleSize: (400 / this.state.consumers.length / 4) //margin is the same as bubble size
 		}
-		for (const c of this.state.consumers.values()) {
+		for (const c of this.state.consumers) {
 			totalConsumed = totalConsumed + c.totalOffsets
-			cComps.push(<Consumer numConsumers={this.state.consumers.length} svgLayout={consumerSvgLayout} partitions={this.state.partitions} partitionRectangles={partitionRectangles} c={c} key={"Consumer-"+c.consumerId}/>)
+			cComps.push(<Consumer numConsumers={this.state.consumers.length} svgLayout={consumerSvgLayout} partitions={this.state.partitions} partitionRectangles={partitionRectangles} c={c} g={this.state.consumerGroup} key={"Consumer-"+c.consumerId}/>)
 		}
 
 		return(

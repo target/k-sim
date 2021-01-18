@@ -42,6 +42,7 @@ class SimulatorController extends React.Component {
 						<button onClick={() => this.props.simMutate([{actionType: 'create', simType: 'consumer'}])}>+</button>
 					</h2>	
 					<ul>{consumerPropList}</ul>
+					<button onClick={() => this.props.simMutate([{actionType: 'chaos', count: 1}])}>CHAOS</button>
 				</div>
 			</div>
 

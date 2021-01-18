@@ -53,11 +53,13 @@ class Consumer extends React.Component {
 		let totalLag = 0
 		//let totalOffsets = 0
 
-		for (let myPartition of this.props.c.srcPartitions) {
-			let a = this.props.partitions[myPartition.partitionId]
-			let aR = this.props.partitionRectangles[myPartition.partitionId]
+		let partitionList = this.props.g.partitionMapping[cId] //The list of partition IDs we are mapped to
+		for (let aId of partitionList) {
+			let a = this.props.partitions[aId]
+			let aR = this.props.partitionRectangles[aId]
+			let o = this.props.g.offsets[aId]
 
-			let lag = a.maxOffset - myPartition.currentOffset
+			let lag = a.maxOffset - o.currentOffset
 			totalLag += lag
 			//totalOffsets += myPartition.currentOffset
 
@@ -78,12 +80,12 @@ class Consumer extends React.Component {
 		}
 
 		//lag Component
-		let bubbleOffset = this.props.svgLayout.bubbleSize * (this.props.c.consumerId + .5) * 4
+		let bubbleOffset = this.props.svgLayout.bubbleSize * (cId + .5) * 4
 		const lComp = <ConsumerLagBubble
 			xPos={this.props.svgLayout.tr.x + this.props.svgLayout.w / 2}
 			yPos={this.props.svgLayout.tr.y + bubbleOffset}
 			bubbleSize={this.props.svgLayout.bubbleSize} //Its a lie, but it's close enough
-			consumerId={this.props.c.consumerId}
+			consumerId={cId}
 			lag={totalLag}
 		/>
 
