@@ -1,0 +1,600 @@
+{
+    "clusters": {
+        "byId": {
+            "c0": {
+                "id": "c0",
+                "name": "example-cluster",
+                "brokers": [
+                    "c0b0",
+                    "c0b1",
+                    "c0b2"
+                ],
+                "topics": [
+                    "c0t0"
+                ],
+                "nextTopicId": 0
+            }
+        },
+        "ids": [
+            "c0"
+        ],
+        "nextId": 1
+    },
+    "topics": {
+        "byId": {
+            "c0t0": {
+                "id": "c0t0",
+                "name": "example-topic",
+                "clusterId": "c0",
+                "numReplicas": 2,
+                "partitions": [
+                    "c0t0p0",
+                    "c0t0p1",
+                    "c0t0p2",
+                    "c0t0p3",
+                    "c0t0p4",
+                    "c0t0p5",
+                    "c0t0p6",
+                    "c0t0p7",
+                    "c0t0p8",
+                    "c0t0p9",
+                    "c0t0p10",
+                    "c0t0p11",
+                    "c0t0p12",
+                    "c0t0p13"
+                ],
+                "nextPartitionId": 14
+            }
+        },
+        "ids": [
+            "c0t0"
+        ],
+        "nextId": 1
+    },
+    "partitions": {
+        "byId": {
+            "c0t0p0": {
+                "id": "c0t0p0",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p0r0",
+                    "c0t0p0r1"
+                ]
+            },
+            "c0t0p1": {
+                "id": "c0t0p1",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p1r0",
+                    "c0t0p1r1"
+                ]
+            },
+            "c0t0p2": {
+                "id": "c0t0p2",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p2r0",
+                    "c0t0p2r1"
+                ]
+            },
+            "c0t0p3": {
+                "id": "c0t0p3",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p3r0",
+                    "c0t0p3r1"
+                ]
+            },
+            "c0t0p4": {
+                "id": "c0t0p4",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p4r0",
+                    "c0t0p4r1"
+                ]
+            },
+            "c0t0p5": {
+                "id": "c0t0p5",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p5r0",
+                    "c0t0p5r1"
+                ]
+            },
+            "c0t0p6": {
+                "id": "c0t0p6",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p6r0",
+                    "c0t0p6r1"
+                ]
+            },
+            "c0t0p7": {
+                "id": "c0t0p7",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p7r0",
+                    "c0t0p7r1"
+                ]
+            },
+            "c0t0p8": {
+                "id": "c0t0p8",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p8r0",
+                    "c0t0p8r1"
+                ]
+            },
+            "c0t0p9": {
+                "id": "c0t0p9",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p9r0",
+                    "c0t0p9r1"
+                ]
+            },
+            "c0t0p10": {
+                "id": "c0t0p10",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p10r0",
+                    "c0t0p10r1"
+                ]
+            },
+            "c0t0p11": {
+                "id": "c0t0p11",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p11r0",
+                    "c0t0p11r1"
+                ]
+            },
+            "c0t0p12": {
+                "id": "c0t0p12",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p12r0",
+                    "c0t0p12r1"
+                ]
+            },
+            "c0t0p13": {
+                "id": "c0t0p13",
+                "topidId": "c0t0",
+                "replicas": [
+                    "c0t0p13r0",
+                    "c0t0p13r1"
+                ]
+            }
+        },
+        "ids": [
+            "c0t0p0",
+            "c0t0p1",
+            "c0t0p2",
+            "c0t0p3",
+            "c0t0p4",
+            "c0t0p5",
+            "c0t0p6",
+            "c0t0p7",
+            "c0t0p8",
+            "c0t0p9",
+            "c0t0p10",
+            "c0t0p11",
+            "c0t0p12",
+            "c0t0p13"
+        ]
+    },
+    "brokers": {
+        "byId": {
+            "c0b0": {
+                "id": "c0b0",
+                "clusterId": "c0",
+                "replicas": [
+                    "c0t0p0r0",
+                    "c0t0p2r1",
+                    "c0t0p3r1",
+                    "c0t0p4r0",
+                    "c0t0p6r1",
+                    "c0t0p7r0",
+                    "c0t0p9r1",
+                    "c0t0p10r0",
+                    "c0t0p12r1",
+                    "c0t0p13r0"
+                ]
+            },
+            "c0b1": {
+                "id": "c0b1",
+                "clusterId": "c0",
+                "replicas": [
+                    "c0t0p0r1",
+                    "c0t0p1r1",
+                    "c0t0p2r0",
+                    "c0t0p4r1",
+                    "c0t0p5r0",
+                    "c0t0p7r1",
+                    "c0t0p8r0",
+                    "c0t0p10r1",
+                    "c0t0p11r0",
+                    "c0t0p13r1"
+                ]
+            },
+            "c0b2": {
+                "id": "c0b2",
+                "clusterId": "c0",
+                "replicas": [
+                    "c0t0p1r0",
+                    "c0t0p3r0",
+                    "c0t0p5r1",
+                    "c0t0p6r0",
+                    "c0t0p8r1",
+                    "c0t0p9r0",
+                    "c0t0p11r1",
+                    "c0t0p12r0"
+                ]
+            }
+        },
+        "ids": [
+            "c0b0",
+            "c0b1",
+            "c0b2"
+        ],
+        "nextId": 3
+    },
+    "replicas": {
+        "byId": {
+            "c0t0p0r0": {
+                "id": "c0t0p0r0",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p0",
+                "maxOffset": 1376,
+                "minOffset": 0
+            },
+            "c0t0p0r1": {
+                "id": "c0t0p0r1",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p0",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p1r0": {
+                "id": "c0t0p1r0",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p1",
+                "maxOffset": 1304,
+                "minOffset": 0
+            },
+            "c0t0p1r1": {
+                "id": "c0t0p1r1",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p1",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p2r0": {
+                "id": "c0t0p2r0",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p2",
+                "maxOffset": 1276,
+                "minOffset": 0
+            },
+            "c0t0p2r1": {
+                "id": "c0t0p2r1",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p2",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p3r0": {
+                "id": "c0t0p3r0",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p3",
+                "maxOffset": 1336,
+                "minOffset": 0
+            },
+            "c0t0p3r1": {
+                "id": "c0t0p3r1",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p3",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p4r0": {
+                "id": "c0t0p4r0",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p4",
+                "maxOffset": 1228,
+                "minOffset": 0
+            },
+            "c0t0p4r1": {
+                "id": "c0t0p4r1",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p4",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p5r0": {
+                "id": "c0t0p5r0",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p5",
+                "maxOffset": 1352,
+                "minOffset": 0
+            },
+            "c0t0p5r1": {
+                "id": "c0t0p5r1",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p5",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p6r0": {
+                "id": "c0t0p6r0",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p6",
+                "maxOffset": 1276,
+                "minOffset": 0
+            },
+            "c0t0p6r1": {
+                "id": "c0t0p6r1",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p6",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p7r0": {
+                "id": "c0t0p7r0",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p7",
+                "maxOffset": 1292,
+                "minOffset": 0
+            },
+            "c0t0p7r1": {
+                "id": "c0t0p7r1",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p7",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p8r0": {
+                "id": "c0t0p8r0",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p8",
+                "maxOffset": 1312,
+                "minOffset": 0
+            },
+            "c0t0p8r1": {
+                "id": "c0t0p8r1",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p8",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p9r0": {
+                "id": "c0t0p9r0",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p9",
+                "maxOffset": 1428,
+                "minOffset": 0
+            },
+            "c0t0p9r1": {
+                "id": "c0t0p9r1",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p9",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p10r0": {
+                "id": "c0t0p10r0",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p10",
+                "maxOffset": 1388,
+                "minOffset": 0
+            },
+            "c0t0p10r1": {
+                "id": "c0t0p10r1",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p10",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p11r0": {
+                "id": "c0t0p11r0",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p11",
+                "maxOffset": 1360,
+                "minOffset": 0
+            },
+            "c0t0p11r1": {
+                "id": "c0t0p11r1",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p11",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p12r0": {
+                "id": "c0t0p12r0",
+                "brokerId": "c0b2",
+                "partitionId": "c0t0p12",
+                "maxOffset": 1416,
+                "minOffset": 0
+            },
+            "c0t0p12r1": {
+                "id": "c0t0p12r1",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p12",
+                "maxOffset": 0,
+                "minOffset": 0
+            },
+            "c0t0p13r0": {
+                "id": "c0t0p13r0",
+                "brokerId": "c0b0",
+                "partitionId": "c0t0p13",
+                "maxOffset": 1360,
+                "minOffset": 0
+            },
+            "c0t0p13r1": {
+                "id": "c0t0p13r1",
+                "brokerId": "c0b1",
+                "partitionId": "c0t0p13",
+                "maxOffset": 0,
+                "minOffset": 0
+            }
+        },
+        "ids": [
+            "c0t0p0r0",
+            "c0t0p0r1",
+            "c0t0p1r0",
+            "c0t0p1r1",
+            "c0t0p2r0",
+            "c0t0p2r1",
+            "c0t0p3r0",
+            "c0t0p3r1",
+            "c0t0p4r0",
+            "c0t0p4r1",
+            "c0t0p5r0",
+            "c0t0p5r1",
+            "c0t0p6r0",
+            "c0t0p6r1",
+            "c0t0p7r0",
+            "c0t0p7r1",
+            "c0t0p8r0",
+            "c0t0p8r1",
+            "c0t0p9r0",
+            "c0t0p9r1",
+            "c0t0p10r0",
+            "c0t0p10r1",
+            "c0t0p11r0",
+            "c0t0p11r1",
+            "c0t0p12r0",
+            "c0t0p12r1",
+            "c0t0p13r0",
+            "c0t0p13r1"
+        ]
+    },
+    "groups": {
+        "byId": {
+            "c0g0": {
+                "id": "c0g0",
+                "topicMapping": {
+                    "c0t0": {
+                        "c0t0p0": {
+                            "instanceId": "i1",
+                            "offset": 1376
+                        },
+                        "c0t0p1": {
+                            "instanceId": "i2",
+                            "offset": 1304
+                        },
+                        "c0t0p2": {
+                            "instanceId": "i1",
+                            "offset": 1276
+                        }
+                    }
+                },
+                "consumers": [
+                    "i1",
+                    "i2"
+                ],
+                "topics": [
+                    "c0t0"
+                ]
+            }
+        },
+        "ids": [
+            "c0g0"
+        ],
+        "nextId": 1
+    },
+    "instances": {
+        "byId": {
+            "i0": {
+                "id": "i0",
+                "name": "simpleProducer-0",
+                "perfData": {
+                    "capacity": 10,
+                    "tickCapacity": 2
+                },
+                "backlog": {
+                    "maxBacklog": 100,
+                    "backlog": 0,
+                    "dropped": 0
+                },
+                "source": {
+                    "id": "simpleSource",
+                    "type": "simpleSource",
+                    "rateLimit": 4
+                },
+                "drain": {
+                    "id": "c0t0",
+                    "type": "topic",
+                    "rateLimit": 999
+                }
+            },
+            "i1": {
+                "id": "i1",
+                "name": "simpleConsumer-0",
+                "perfData": {
+                    "capacity": 5,
+                    "tickCapacity": 0
+                },
+                "backlog": {
+                    "maxBacklog": 100,
+                    "backlog": 6,
+                    "dropped": 0
+                },
+                "source": {
+                    "id": "c0g0",
+                    "type": "group",
+                    "rateLimit": 999
+                },
+                "drain": {
+                    "id": "simpleDrain",
+                    "type": "simpleDrain",
+                    "rateLimit": 4
+                }
+            },
+            "i2": {
+                "id": "i2",
+                "name": "simpleConsumer-1",
+                "perfData": {
+                    "capacity": 5,
+                    "tickCapacity": 5
+                },
+                "backlog": {
+                    "maxBacklog": 100,
+                    "backlog": 0,
+                    "dropped": 0
+                },
+                "source": {
+                    "id": "c0g0",
+                    "type": "group",
+                    "rateLimit": 999
+                },
+                "drain": {
+                    "id": "simpleDrain",
+                    "type": "simpleDrain",
+                    "rateLimit": 4
+                }
+            }
+        },
+        "ids": [
+            "i0",
+            "i1",
+            "i2"
+        ],
+        "nextId": 3
+    },
+    "systemStats": {
+        "totalSourced": 0,
+        "totalDrained": 0,
+        "totalReplicated": 0,
+        "totalTicks": 0,
+        "totalRequestedCapacity": 0,
+        "totalUnusedCapacity": 0,
+        "totalUsedCapacity": 0
+    },
+    "gen": 0,
+    "selection": {
+        "simType": null,
+        "id": null,
+        "details": null
+    }
+}

@@ -1,30 +1,11 @@
 import React, { Component } from 'react';
-import Simulator from './Simulator.js';
+import KSim from './ksim/KSim.js';
 
 import './App.css'
 class App extends Component {
 	constructor(props) {
 	  super(props)
-		this.state = { 
-			settings: {
-				producer: { backlog: 0, createRate: 10, produceRate: 10 },
-				partition: { maxReceiveRate: 100, maxTransmitRate: 100 },
-				consumer: { consumeRate: 7 },
-				layout: {
-					numProducers: 2,
-					numPartitions: 2,
-					numConsumers: 3
-				},
-				partitionBalanceStrategy: 'round-robin',
-				general: {
-					tickNumber: 1,
-					maxTicks: 10000,
-					tickMs: 66
-				},
-				showSettings: true,
-				selectedObj: null
-			},
-		}
+		this.state = { }
 	}
   componentDidMount() {
     
@@ -37,10 +18,8 @@ class App extends Component {
   	return (
 		<div className="App">
 		    <h1>k-sim: Kafka Failover/Throughput Simulator</h1>
-			<p>A simple simulator designed to explore bottlenecking and throughput scenarios.  Written with Kafka fundametnals in mind, there's no reason why this shouldn't apply to other queuing technologies.</p>
-			<Simulator {...{
-				settings: this.state.settings
-			}} />
+			<p>A simple simulator designed to explore bottlenecking and throughput scenarios.  Written with Kafka fundamentals in mind, there's no reason why this shouldn't apply to other queuing technologies.</p>
+			<KSim />
 		</div>
     );
   }

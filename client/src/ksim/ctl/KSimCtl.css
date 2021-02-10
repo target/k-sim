@@ -1,0 +1,19 @@
+.k-sim-ctl{
+    justify-content: center;
+    flex-direction: column;
+    padding: 5px;
+    align-content: center;
+    margin-top: 10px;
+}
+
+.actionRequest {
+    width: 75%;
+    margin-top: 5px 
+}
+
+.ctl-buttons{
+    /* display: flex;
+    justify-content: center;
+    flex-direction: column; */
+    padding: 100px;
+}
