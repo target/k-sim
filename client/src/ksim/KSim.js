@@ -39,7 +39,7 @@ class KSim extends Component {
         }
         }, () => { this.setState(tick(this.state, nonce)) } )// This applies a tick(), which also clears the "lock"
       } else {
-        console.log(`lockTickTock: Skipping update, simulator left in "locked" state by ${this.state.nonce}.`)
+        console.log(`lockTickTock: Skipping update, simulator left in "locked" state by ${this.state.lock.owner}.`)
       }
     }.bind(this))
   }
