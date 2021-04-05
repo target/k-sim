@@ -6,10 +6,7 @@ class KSimVis extends Component {
     // Here we set up a completely empty state
 	  this.state = { }
 	}
-  componentDidMount() {}
-
-  componentWillUnmount() {}
-
+	
   render() {
     if (this.props.sim.topics.ids.length < 1) { return (<div className="k-sim-vis"> No topics to visualize. </div>) }
 
@@ -24,8 +21,8 @@ class KSimVis extends Component {
     for (const topicId of this.props.sim.topics.ids) {
       svgComps.push(
         <svg className="k-sim-svg" width={svgDim.width} height={svgDim.height}>
-          <VisOneTopicFlow 
-            topicId={topicId} 
+          <VisOneTopicFlow
+            topicId={topicId}
             sim={this.props.sim}
             width={svgDim.width}
             height={svgDim.height}

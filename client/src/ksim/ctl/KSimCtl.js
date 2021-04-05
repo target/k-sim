@@ -6,22 +6,19 @@ class KSimCtl extends Component {
 	constructor(props) {
         super()
         // Here we set up a completely empty state
-	    this.state = { 
+	    this.state = {
         }
 	}
-    componentDidMount() {}
 
-    componentWillUnmount() {}
-
-    render() {
-      const instancePayload = {
+  render() {
+    const instancePayload = {
       'name': 'dynamic',
       'perfData': { 'capacity': 10 },
       'backlog': { 'maxBacklog': 100 }
       }
 
-      const sourceKafkaPayload = { 'type': 'group', 'rateLimit': 999 }
-      const drainKafkaPayload = { 'type': 'topic', 'rateLimit': 999 }
+    const sourceKafkaPayload = { 'type': 'group', 'rateLimit': 999 }
+    const drainKafkaPayload = { 'type': 'topic', 'rateLimit': 999 }
   	return (
       <div className="k-sim-ctl">
           Simulation Control

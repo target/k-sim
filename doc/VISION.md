@@ -1,13 +1,15 @@
 # Vision
+![ksim Logo](/client/public/logo192.png)
+
 A stand-alone, in-browser, tool for exploring how resource constraints cause unexpected bottlenecks, using Kafka as the example.
 
 Also, a tool for rasing understanding of how Kafka generally works.
 
 ## Why do this at all?
-I'm an sysadm/integrator/devops/sre/??? engineering generalist, so my Javascript code may not be all that beautiful. 
+I'm an sysadm/integrator/devops/sre/??? engineering generalist, so my Javascript code may not be all that beautiful.
 So why write a simulator like this at all?
 
-This is part of a "10-percent" learning project, that also wants to fuel other "10-percent" learning projects. 
+This is part of a "10-percent" learning project, that also wants to fuel other "10-percent" learning projects.
 We hope to learn about other areas to strengthen our core area.
 
 By simulating Kafka, we can learn a great deal about three things:

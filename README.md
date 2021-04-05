@@ -1,4 +1,6 @@
 # k-sim
+![ksim Logo](/client/public/logo512.png)
+
 kafka simulator 
 
 A simple simulator trying to work through bottleneck/constraints theory as applied to a few simple Kafka topologies.
