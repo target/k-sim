@@ -20,14 +20,14 @@ export const instTwoTopics = [
         'payload': { // c0t0
             'name': 'example-topic',
             'numReplicas': 2     // topics will not be allowed to change replica targets.
-        } 
+        }
     },
 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
     {'action': 'addPartition', 'payload': { }}, //
     {'action': 'addPartition', 'payload': { }}, //
 
@@ -39,20 +39,20 @@ export const instTwoTopics = [
         'payload': { // c0t0
             'name': 'example-topic',
             'numReplicas': 2     // topics will not be allowed to change replica targets.
-        } 
+        }
     },
 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
-    {'action': 'addPartition', 'payload': { }}, // 
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
+    {'action': 'addPartition', 'payload': { }}, //
     {'action': 'addPartition', 'payload': { }}, //
     {'action': 'addPartition', 'payload': { }}, //
 
     // Add a GROUP (for consumers)
     {'action': 'addGroup',  'payload': {} }, // g1 (consumer group on topic c0t0)
 
-    // Add an INSTANCE (producer) 
+    // Add an INSTANCE (producer)
     {'action': 'addInstance', // i0
         'payload': {
             'name': 'simpleProducer-0',
@@ -60,9 +60,9 @@ export const instTwoTopics = [
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'instanceID': 'i0', 'type': 'simpleSource', 'rateLimit': 4 }}, 
-    {'action': 'addDrain',  'payload': { 'instanceID': 'i0', 'id': 'c0t0', 'type': 'topic', 'rateLimit': 999 }}, 
-  
+    {'action': 'addSource', 'payload': { 'instanceID': 'i0', 'type': 'simpleSource', 'rateLimit': 4 }},
+    {'action': 'addDrain',  'payload': { 'instanceID': 'i0', 'id': 'c0t0', 'type': 'topic', 'rateLimit': 999 }},
+
     {'action': 'addInstance', // i1
         'payload': {
             'name': 'simpleProducer-1',
@@ -70,9 +70,9 @@ export const instTwoTopics = [
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'instanceID': 'i1', 'type': 'simpleSource', 'rateLimit': 4 }}, 
-    {'action': 'addDrain',  'payload': { 'instanceID': 'i1', 'id': 'c0t0', 'type': 'topic', 'rateLimit': 999 }}, 
-  
+    {'action': 'addSource', 'payload': { 'instanceID': 'i1', 'type': 'simpleSource', 'rateLimit': 4 }},
+    {'action': 'addDrain',  'payload': { 'instanceID': 'i1', 'id': 'c0t0', 'type': 'topic', 'rateLimit': 999 }},
+
     {'action': 'addInstance', // i2
         'payload': {
             'name': 'overloadedProducer-1',
@@ -80,11 +80,8 @@ export const instTwoTopics = [
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'instanceID': 'i2', 'type': 'simpleSource', 'rateLimit': 6 }}, 
-    {'action': 'addDrain',  'payload': { 'instanceID': 'i2', 'id': 'c0t0', 'type': 'topic', 'rateLimit': 999 }}, 
- 
-    
-
+    {'action': 'addSource', 'payload': { 'instanceID': 'i2', 'type': 'simpleSource', 'rateLimit': 6 }},
+    {'action': 'addDrain',  'payload': { 'instanceID': 'i2', 'id': 'c0t0', 'type': 'topic', 'rateLimit': 999 }},
 
     // Add an INSTANCE (mid-tier)
     {'action': 'addInstance', // i3
@@ -94,7 +91,7 @@ export const instTwoTopics = [
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    
+
     // Add an INSTANCE (mid-tier)
     {'action': 'addInstance', // i4
         'payload': {
@@ -115,54 +112,54 @@ export const instTwoTopics = [
 
     // Wire-up mid-tier
     //// SOURCES
-    {'action': 'addSource', 'payload': { 'instanceId': 'i3', 'id': 'c0g0', 'type': 'group', 'rateLimit': 999 }},  
-    {'action': 'addSource', 'payload': { 'instanceId': 'i4', 'id': 'c0g0', 'type': 'group', 'rateLimit': 999 }},  
-    {'action': 'addSource', 'payload': { 'instanceId': 'i5', 'id': 'c0g0', 'type': 'group', 'rateLimit': 999 }},  
+    {'action': 'addSource', 'payload': { 'instanceId': 'i3', 'id': 'c0g0', 'type': 'group', 'rateLimit': 999 }},
+    {'action': 'addSource', 'payload': { 'instanceId': 'i4', 'id': 'c0g0', 'type': 'group', 'rateLimit': 999 }},
+    {'action': 'addSource', 'payload': { 'instanceId': 'i5', 'id': 'c0g0', 'type': 'group', 'rateLimit': 999 }},
 
     //// DRAINS
-    {'action': 'addDrain',  'payload': { 'instanceId': 'i3', 'id': 'c0t1', 'type': 'topic', 'rateLimit': 999 }}, 
-    {'action': 'addDrain',  'payload': { 'instanceId': 'i4', 'id': 'c0t1', 'type': 'topic', 'rateLimit': 999 }}, 
-    {'action': 'addDrain',  'payload': { 'instanceId': 'i5', 'id': 'c0t1', 'type': 'topic', 'rateLimit': 999 }}, 
+    {'action': 'addDrain',  'payload': { 'instanceId': 'i3', 'id': 'c0t1', 'type': 'topic', 'rateLimit': 999 }},
+    {'action': 'addDrain',  'payload': { 'instanceId': 'i4', 'id': 'c0t1', 'type': 'topic', 'rateLimit': 999 }},
+    {'action': 'addDrain',  'payload': { 'instanceId': 'i5', 'id': 'c0t1', 'type': 'topic', 'rateLimit': 999 }},
 
 
     // Finally, add final-topic-to-drain (we don't need to know IDs, we can use defaults)
-    {'action': 'addInstance', 
+    {'action': 'addInstance',
         'payload': {
             'name': 'dbTier-0',
             'perfData': { 'capacity': 8 },
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},  
-    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }}, 
+    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},
+    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }},
 
-    {'action': 'addInstance', 
+    {'action': 'addInstance',
         'payload': {
             'name': 'dbTier-0',
             'perfData': { 'capacity': 8 },
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},  
-    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }}, 
-    
-    {'action': 'addInstance', 
+    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},
+    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }},
+
+    {'action': 'addInstance',
         'payload': {
             'name': 'dbTier-0',
             'perfData': { 'capacity': 8 },
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},  
-    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }}, 
-    
-    {'action': 'addInstance', 
+    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},
+    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }},
+
+    {'action': 'addInstance',
         'payload': {
             'name': 'dbTier-0',
             'perfData': { 'capacity': 8 },
             'backlog': { 'maxBacklog': 100 }
         }
     },
-    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},  
-    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }}, 
+    {'action': 'addSource', 'payload': { 'id': 'c0g1', 'type': 'group', 'rateLimit': 999 }},
+    {'action': 'addDrain',  'payload': { 'type': 'simpleDrain', 'rateLimit': 5 }},
 ]

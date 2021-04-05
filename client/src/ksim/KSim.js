@@ -16,8 +16,8 @@ class KSim extends Component {
     const sim = newSim()
     this.lock = new AsyncLock()
 
-    this.state = { 
-      "sim": sim, 
+    this.state = {
+      "sim": sim,
       "requestedActions": instTwoTopics,
       "lock": {
         "owner": 0,
@@ -40,7 +40,7 @@ class KSim extends Component {
         }, () => { this.setState(tick(this.state, nonce)) } )// This applies a tick(), which also clears the "lock"
       } else {
         console.log(`lockTickTock: Skipping update, simulator left in "locked" state by ${this.state.nonce}.`)
-      } 
+      }
     }.bind(this))
   }
 
@@ -55,14 +55,10 @@ class KSim extends Component {
 
   componentDidMount() {
     //Apply the initialization to state
-    // this.lockTickTock()
-    
     this.setState({
       intervalOne:  setInterval( () => this.lockTickTock(), 100 )
     })
   }
-
-  componentWillUnmount() {}
 
   render() {
   	return (

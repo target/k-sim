@@ -1,16 +1,11 @@
 import React, { Component } from 'react';
-class KSimCtx extends Component {
+class KSimCtx extends Component{
 	constructor(props) {
-        super(props)
-        // Here we set up a completely empty state
-	    this.state = { 
-        }
+    super(props)
+    // Here we set up a completely empty state
+    this.state = { }
 	}
-    componentDidMount() {}
-
-    componentWillUnmount() {}
-
-    render() {
+  render() {
   	return (
     <div className="k-sim-ctx">
       Contextual Browser (WIP)
